@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Base64 Decode Test</title>
+</head>
+<body>
+    <h1>Testing Base64 Decoding</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Test base64 strings from your examples
+        const testCases = [
+            "ZXhwb3J0IGZ1bmN0aW9uIGdldEJsb2dCeVNsdWcoc2x1Zykgewo=",
+            "aW1wb3J0IHsgZ2V0QmxvZ0J5U2x1ZywgZ2V0QWxsQmxvZ3MgfSBmcm9tICcuLi9kYXRhL2Jsb2dzJwo=",
+            "ICBjb25zdCBibG9nID0gZ2V0QmxvZ0J5U2x1ZyhzbHVnKQo="
+        ];
+        
+        function decodeBase64Test(str) {
+            const trimmed = str.trim();
+            if (/^[A-Za-z0-9+/=]+=*$/.test(trimmed) && trimmed.length >= 4) {
+                try {
+                    return atob(trimmed);
+                } catch (e) {
+                    return "ERROR: " + e.message;
+                }
+            }
+            return "Not base64";
+        }
+        
+        const results = document.getElementById('results');
+        testCases.forEach((test, idx) => {
+            const decoded = decodeBase64Test(test);
+            const div = document.createElement('div');
+            div.style.padding = '10px';
+            div.style.border = '1px solid #ccc';
+            div.style.margin = '10px 0';
+            div.innerHTML = `
+                <strong>Test ${idx + 1}:</strong><br>
+                <strong>Input:</strong> <code>${test}</code><br>
+                <strong>Decoded:</strong> <code style="color: green;">${decoded}</code>
+            `;
+            results.appendChild(div);
+        });
+    </script>
+</body>
+</html>
+
+

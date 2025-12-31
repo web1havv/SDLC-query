@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoekt Query Metrics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .metric-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metric-label {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .chart-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .recent-queries {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .recent-queries h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .query-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .query-item:last-child {
+            border-bottom: none;
+        }
+
+        .query-item.header {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .nl-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+        }
+
+        .direct-badge {
+            background: #2196F3;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+        }
+
+        .success {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .refresh-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: #1976D2;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-success {
+            background: #4CAF50;
+        }
+
+        .status-error {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Zoekt Query Metrics Dashboard</h1>
+        
+        <button class="refresh-btn" onclick="loadMetrics()">🔄 Refresh</button>
+        <span id="lastUpdate"></span>
+
+        <div class="dashboard-grid">
+            <div class="metric-card">
+                <h3>Total Queries</h3>
+                <div class="metric-value" id="totalQueries">0</div>
+                <div class="metric-label">All time</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Success Rate</h3>
+                <div class="metric-value" id="successRate">0%</div>
+                <div class="metric-label" id="successLabel">0 successful / 0 total</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Avg Response Time</h3>
+                <div class="metric-value" id="avgResponseTime">0ms</div>
+                <div class="metric-label" id="responseTimeRange">Min: 0ms / Max: 0ms</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Avg Results per Query</h3>
+                <div class="metric-value" id="avgResults">0</div>
+                <div class="metric-label" id="totalResults">0 total results</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Natural Language Queries</h3>
+                <div class="metric-value" id="nlQueries">0</div>
+                <div class="metric-label" id="nlSuccessRate">0% success rate</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Direct Queries</h3>
+                <div class="metric-value" id="directQueries">0</div>
+                <div class="metric-label">Zoekt syntax</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Query Type Distribution</h2>
+            <canvas id="queryTypeChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Response Time Over Time</h2>
+            <canvas id="responseTimeChart"></canvas>
+        </div>
+
+        <div class="recent-queries">
+            <h2>Recent Queries (Last 20)</h2>
+            <div class="query-item header">
+                <div>Original Query</div>
+                <div>Translated Query</div>
+                <div>Type</div>
+                <div>Results</div>
+                <div>Time</div>
+                <div>Status</div>
+            </div>
+            <div id="recentQueriesList"></div>
+        </div>
+    </div>
+
+    <script>
+        let queryTypeChart, responseTimeChart;
+
+        function formatTime(ms) {
+            if (ms < 1000) return Math.round(ms) + 'ms';
+            return (ms / 1000).toFixed(2) + 's';
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function loadMetrics() {
+            fetch('/api/metrics')
+                .then(res => res.json())
+                .then(data => {
+                    updateMetrics(data);
+                    updateCharts(data);
+                    updateRecentQueries(data.recentQueries || []);
+                    document.getElementById('lastUpdate').textContent = 
+                        'Last updated: ' + new Date().toLocaleTimeString();
+                })
+                .catch(err => {
+                    console.error('Error loading metrics:', err);
+                });
+        }
+
+        function updateMetrics(data) {
+            document.getElementById('totalQueries').textContent = data.totalQueries || 0;
+            
+            const successRate = data.successRate || 0;
+            document.getElementById('successRate').textContent = successRate.toFixed(1) + '%';
+            document.getElementById('successLabel').textContent = 
+                `${data.successfulQueries || 0} successful / ${data.totalQueries || 0} total`;
+
+            const avgTime = data.avgResponseTime || 0;
+            document.getElementById('avgResponseTime').textContent = formatTime(avgTime);
+            document.getElementById('responseTimeRange').textContent = 
+                `Min: ${formatTime(data.minResponseTime || 0)} / Max: ${formatTime(data.maxResponseTime || 0)}`;
+
+            document.getElementById('avgResults').textContent = 
+                Math.round(data.averageResults || 0);
+            document.getElementById('totalResults').textContent = 
+                `${data.totalResults || 0} total results`;
+
+            document.getElementById('nlQueries').textContent = data.nlQueries || 0;
+            const nlSuccessRate = data.nlQuerySuccessRate || 0;
+            document.getElementById('nlSuccessRate').textContent = 
+                nlSuccessRate.toFixed(1) + '% success rate';
+
+            document.getElementById('directQueries').textContent = data.directQueries || 0;
+        }
+
+        function updateCharts(data) {
+            // Query Type Chart
+            const ctx1 = document.getElementById('queryTypeChart').getContext('2d');
+            if (queryTypeChart) queryTypeChart.destroy();
+            queryTypeChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Count', 'List', 'Find', 'Blog', 'Direct'],
+                    datasets: [{
+                        data: [
+                            data.countQueries || 0,
+                            data.listQueries || 0,
+                            data.findQueries || 0,
+                            data.blogQueries || 0,
+                            data.directQueries || 0
+                        ],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Response Time Chart
+            const recent = (data.recentQueries || []).slice(-20);
+            const ctx2 = document.getElementById('responseTimeChart').getContext('2d');
+            if (responseTimeChart) responseTimeChart.destroy();
+            responseTimeChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: recent.map((q, i) => `Query ${recent.length - i}`),
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: recent.map(q => q.responseTime || 0),
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRecentQueries(queries) {
+            const container = document.getElementById('recentQueriesList');
+            const recent = queries.slice(-20).reverse();
+            
+            container.innerHTML = recent.map(q => `
+                <div class="query-item">
+                    <div title="${q.query || ''}">${(q.query || '').substring(0, 40)}${(q.query || '').length > 40 ? '...' : ''}</div>
+                    <div title="${q.translated || ''}">${(q.translated || '').substring(0, 40)}${(q.translated || '').length > 40 ? '...' : ''}</div>
+                    <div>
+                        ${q.isNL ? '<span class="nl-badge">NL</span>' : '<span class="direct-badge">Direct</span>'}
+                        ${q.queryType || ''}
+                    </div>
+                    <div>${q.resultCount || 0}</div>
+                    <div>${formatTime(q.responseTime || 0)}</div>
+                    <div>
+                        <span class="status-indicator ${q.success ? 'status-success' : 'status-error'}"></span>
+                        ${q.success ? '<span class="success">✓</span>' : '<span class="error">✗</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load metrics on page load and refresh every 5 seconds
+        loadMetrics();
+        setInterval(loadMetrics, 5000);
+    </script>
+</body>
+</html>
+
+
+
+
+

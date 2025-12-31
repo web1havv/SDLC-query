@@ -1,0 +1,193 @@
+================================================================================
+                    ZOEKT COMMAND LINE QUERIES - COMPLETE REFERENCE
+================================================================================
+
+SETUP (Run once):
+-----------------
+export PATH="$PATH:$(go env GOPATH)/bin"
+
+================================================================================
+📚 BLOG QUERIES
+================================================================================
+
+# How many blogs? Find all blog titles
+zoekt "Amazon ML Challenge" -r
+zoekt "Mistakes I Made" -r
+zoekt "AI Code Agents" -r
+zoekt "How We Built" -r
+
+# Search blog content
+zoekt "methodology" -r
+zoekt "learned" -r
+zoekt "solutions" -r
+zoekt "Mistakes" -r
+
+# Find blog dates
+zoekt "2025-12" -r
+zoekt "2025-12-20" -r
+
+# Multiple topics
+zoekt "(Amazon OR ML OR Challenge)" -r
+zoekt "(Mistakes OR learned)" -r
+zoekt "(methodology OR solutions)" -r
+
+# Blog-specific searches
+zoekt "Amazon ML Challenge" file:blogs.js
+zoekt "excerpt:" file:blogs.js
+zoekt "slug:" file:blogs.js
+
+================================================================================
+💻 CODE QUERIES
+================================================================================
+
+# Basic searches
+zoekt "export default function" -r
+zoekt "import" -r
+zoekt "function" -r
+zoekt "component" -r
+
+# Find specific components
+zoekt "function Home" -r
+zoekt "function Nav" -r
+zoekt "function App" -r
+
+# React-specific
+zoekt "useState" -r
+zoekt "useEffect" -r
+zoekt "(useState OR useEffect)" -r
+
+# File type filters
+zoekt "function file:*.jsx" -r
+zoekt "import file:*.js" -r
+zoekt "export file:*.{js,jsx}" -r
+
+# Exclude files/directories
+zoekt "import" -r | grep -v node_modules
+zoekt "function -file:*test*" -r
+
+# Specific files
+zoekt "content file:App.jsx" -r
+zoekt "import file:Home.jsx" -r
+
+================================================================================
+🔍 ADVANCED QUERIES
+================================================================================
+
+# Regex patterns
+zoekt "/export \w+/" -r
+zoekt "/function \w+\(/" -r
+zoekt "/import .* from/" -r
+
+# Boolean operators
+zoekt "export AND default" -r
+zoekt "(useState OR useEffect) file:*.jsx" -r
+zoekt "export -file:test.js" -r
+
+# Case sensitivity
+zoekt "case:yes React" -r
+zoekt "case:no react" -r
+
+# Language filters
+zoekt "function lang:javascript" -r
+zoekt "import lang:javascript" -r
+
+# Symbol search
+zoekt "sym:Home" -r
+zoekt "sym:Nav" -r
+zoekt "sym:App" -r
+
+# Grouping
+zoekt "(export default) file:*.jsx" -r
+zoekt "(function OR class) file:*.js" -r
+
+================================================================================
+📊 LIST & COUNT QUERIES
+================================================================================
+
+# List only filenames (no content)
+zoekt -l "function"
+zoekt -l "export"
+zoekt -l "import"
+
+# Count matches
+zoekt "export" -r | wc -l
+zoekt "function" -r | wc -l
+zoekt "import" -r | wc -l
+
+# Count unique files
+zoekt -l "function" | wc -l
+zoekt -l "export" | wc -l
+
+# Show with repository name
+zoekt -r "export"
+zoekt -r "function"
+zoekt -r "Amazon ML"
+
+================================================================================
+🎯 COMBINED QUERIES
+================================================================================
+
+# React components in JSX files
+zoekt "(export default function) file:*.jsx" -r
+
+# All imports excluding node_modules
+zoekt "import" -r | grep -v node_modules
+
+# Blog content only
+zoekt "Amazon ML Challenge" file:blogs.js
+
+# Complex: React hooks in components
+zoekt "(useState OR useEffect) file:*.jsx" -r
+
+# Find exports with specific pattern
+zoekt "/export \w+/ file:*.jsx" -r
+
+================================================================================
+🔧 USEFUL FLAGS
+================================================================================
+
+-r     Show repository name in results
+-l     List only filenames (no content)
+-v     Verbose output (debug info)
+-jsonl Output in JSON lines format
+
+# Examples with flags:
+zoekt -r "export"              # With repo name
+zoekt -l "function"            # Filenames only
+zoekt -jsonl "export"          # JSON format
+
+================================================================================
+💡 QUICK TIPS
+================================================================================
+
+1. Limit results: pipe to head -N
+   Example: zoekt "export" | head -10
+
+2. Save results to file
+   Example: zoekt "export" -r > results.txt
+
+3. Search and count
+   Example: zoekt "function" | wc -l
+
+4. Combine with grep
+   Example: zoekt "import" | grep "react"
+
+5. Multiple repositories: All indexed repos are searched automatically
+
+================================================================================
+🚀 WEB UI ALTERNATIVE
+================================================================================
+
+Start web server:
+zoekt-webserver -index ~/.zoekt/
+
+Then visit: http://localhost:6070
+
+Use the same query syntax in the web UI search box!
+
+================================================================================
+
+
+
+
+

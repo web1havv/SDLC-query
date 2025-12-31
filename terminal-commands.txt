@@ -1,0 +1,216 @@
+# ZOEKT QUERY TESTING - TERMINAL COMMANDS
+# Copy and paste these commands directly into your terminal
+
+# First, set up PATH (if not already set)
+export PATH="$PATH:$(go env GOPATH)/bin"
+
+# ============================================================================
+# BASIC QUERIES
+# ============================================================================
+
+# Test 1: Basic content search
+zoekt "export" -r
+
+# Test 2: Basic search with limited results
+zoekt "export" -r | head -10
+
+# Test 3: Search for imports
+zoekt "import" -r
+
+# Test 4: Search for functions
+zoekt "function" -r
+
+# Test 5: Phrase search
+zoekt "export default" -r
+
+# ============================================================================
+# FILE FILTERS
+# ============================================================================
+
+# Test 6: Search in JSX files only
+zoekt "file:*.jsx" -r
+
+# Test 7: Search in JavaScript files only
+zoekt "file:*.js" -r
+
+# Test 8: Content + file filter
+zoekt "export file:*.jsx" -r
+
+# Test 9: Multiple file types
+zoekt "function file:*.{js,jsx}" -r
+
+# ============================================================================
+# LIST FILENAMES
+# ============================================================================
+
+# Test 10: List filenames only (no content)
+zoekt -l "function"
+
+# Test 11: List files containing export
+zoekt -l "export"
+
+# Test 12: Count unique files
+zoekt -l "export" | wc -l
+
+# ============================================================================
+# COUNTING RESULTS
+# ============================================================================
+
+# Test 13: Count total matches
+zoekt "export" -r | wc -l
+
+# Test 14: Count unique files
+zoekt -l "export" | wc -l
+
+# Test 15: Count results per file
+zoekt "export" -r | cut -d: -f1 | sort | uniq -c
+
+# ============================================================================
+# BOOLEAN OPERATORS
+# ============================================================================
+
+# Test 16: OR operator
+zoekt "(useState OR useEffect)" -r
+
+# Test 17: AND operator (implicit)
+zoekt "export AND default" -r
+
+# Test 18: NOT operator
+zoekt "import -file:test.js" -r
+
+# Test 19: Complex boolean
+zoekt "(useState OR useEffect) file:*.jsx" -r
+
+# ============================================================================
+# REGEX QUERIES
+# ============================================================================
+
+# Test 20: Regex pattern
+zoekt "/export \\w+/" -r
+
+# Test 21: Function definitions
+zoekt "/function \\w+\\(/" -r
+
+# Test 22: Regex file filter
+zoekt "file:/.*\\.jsx$/" -r
+
+# ============================================================================
+# LANGUAGE FILTERS
+# ============================================================================
+
+# Test 23: JavaScript only
+zoekt "lang:javascript function" -r
+
+# Test 24: TypeScript only
+zoekt "lang:typescript" -r
+
+# ============================================================================
+# SYMBOL SEARCH
+# ============================================================================
+
+# Test 25: Search for component
+zoekt "sym:Home" -r
+
+# Test 26: Search for App component
+zoekt "sym:App" -r
+
+# ============================================================================
+# JSON OUTPUT
+# ============================================================================
+
+# Test 27: JSON output (requires jq)
+zoekt "export" -jsonl | jq .
+
+# Test 28: Extract filenames from JSON
+zoekt "export" -jsonl | jq -r '.FileName'
+
+# Test 29: Extract line numbers from JSON
+zoekt "export" -jsonl | jq -r '.LineMatches[].LineNumber'
+
+# ============================================================================
+# PERFORMANCE TESTING
+# ============================================================================
+
+# Test 30: Measure execution time
+time zoekt "export" -r > /dev/null
+
+# Test 31: Test multiple queries
+for term in export import function; do
+    echo "Testing: $term"
+    time zoekt "$term" -r > /dev/null
+done
+
+# ============================================================================
+# VALIDATION COMMANDS
+# ============================================================================
+
+# Test 32: Check if zoekt is installed
+which zoekt
+
+# Test 33: Check if index exists
+ls -la ~/.zoekt/
+
+# Test 34: Verify output format
+zoekt "export" -r | grep -E "^[^:]+:[0-9]+:"
+
+# Test 35: Check for errors
+zoekt "export" -r 2>&1
+
+# ============================================================================
+# RANDOM QUERY TESTS
+# ============================================================================
+
+# Test 36: Random search terms
+for term in export import function class const let var return async await; do
+    echo "=== Testing: $term ==="
+    zoekt "$term" -r | head -3
+    echo ""
+done
+
+# Test 37: Random file patterns
+for pattern in "*.jsx" "*.js" "*.ts" "*.tsx" "*.md"; do
+    echo "=== Testing: file:$pattern ==="
+    zoekt "file:$pattern" -r | head -3
+    echo ""
+done
+
+# ============================================================================
+# COMPLEX QUERIES
+# ============================================================================
+
+# Test 38: Complex query 1
+zoekt "(export default) file:*.jsx" -r
+
+# Test 39: Complex query 2
+zoekt "(useState OR useEffect) file:*.jsx" -r
+
+# Test 40: Complex query 3
+zoekt "content:\"function\" lang:javascript -file:*test*" -r
+
+# ============================================================================
+# QUICK VALIDATION SCRIPT
+# ============================================================================
+
+# Run all basic tests at once
+echo "=== Basic Tests ==="
+zoekt "export" -r | head -3
+zoekt "import" -r | head -3
+zoekt "function" -r | head -3
+echo ""
+
+echo "=== File Filter Tests ==="
+zoekt "file:*.jsx" -r | head -3
+zoekt "file:*.js" -r | head -3
+echo ""
+
+echo "=== Boolean Tests ==="
+zoekt "(useState OR useEffect)" -r | head -3
+echo ""
+
+echo "=== Count Tests ==="
+echo "Export matches: $(zoekt "export" -r | wc -l | xargs)"
+echo "Import matches: $(zoekt "import" -r | wc -l | xargs)"
+echo "Function matches: $(zoekt "function" -r | wc -l | xargs)"
+
+
+

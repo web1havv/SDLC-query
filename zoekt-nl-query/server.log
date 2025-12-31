@@ -1,0 +1,21 @@
+2025/12/30 18:26:17 Starting NL Query Server on port 6071
+2025/12/30 18:26:17 Index directory: /Users/web1havv/.zoekt
+2025/12/30 18:26:17 [INFO] loading 2 shard(s): github.com%2Fweb1havv%2Fnew_prod_v16.00000.zoekt, github.com%2Fweb1havv%2Fvaibhav_site_v16.00000.zoekt
+2025/12/30 18:26:18 ✅ OpenRouter enabled with model: mistralai/mistral-7b-instruct:free
+2025/12/30 18:26:18 NL Query Server routes registered:
+2025/12/30 18:26:18   GET /dashboard - Natural Language Search Dashboard (main)
+2025/12/30 18:26:18   GET /api/nl-search?q=<query> - Natural language search API
+2025/12/30 18:26:18   GET / - Redirects to /dashboard
+2025/12/30 18:26:18 Starting server...
+2025/12/30 18:26:18 🎯 Dashboard: http://localhost:6071/dashboard
+2025/12/30 18:26:18 🔍 NL Search API: http://localhost:6071/api/nl-search?q=how many articles
+2025/12/30 18:26:18 📁 Index directory: /Users/web1havv/.zoekt
+2025/12/30 18:26:33 📚 Found relevant code snippets for context
+2025/12/30 18:26:38 📥 OpenRouter raw content:  lang:python sym:def
+2025/12/30 18:26:38 🤖 AI Model generated Zoekt query: lang:python sym:def
+2025/12/30 18:26:38 🎯 Detected query type: list
+2025/12/30 18:26:38 ✅ Using OpenRouter AI model
+2025/12/30 18:26:38 📝 Original query: list all python functions
+2025/12/30 18:26:38 📝 Generated Zoekt query: lang:python sym:def
+2025/12/30 18:26:38 📝 Query type: list
+signal: terminated

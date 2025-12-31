@@ -1,0 +1,200 @@
+{"instruction": "find Python functions but exclude test files", "output": "lang:python content:def  -file:test"}
+{"instruction": "search for JavaScript classes but not in node_modules", "output": "lang:javascript content:class  -file:node_modules"}
+{"instruction": "find Go functions excluding vendor and test directories", "output": "lang:go content:func  -file:vendor -file:test"}
+{"instruction": "search for Python imports but not in __pycache__", "output": "lang:python content:import  -file:__pycache__"}
+{"instruction": "find error handling in Python or JavaScript", "output": "(lang:python or lang:javascript) content:error"}
+{"instruction": "search for authentication in backend but not in tests", "output": "repo:backend content:auth -file:test"}
+{"instruction": "find database queries in Python or Go files", "output": "(lang:python or lang:go) content:database"}
+{"instruction": "search for API endpoints excluding mock files", "output": "content:endpoint -file:mock"}
+{"instruction": "find logging statements in Python but not in config files", "output": "lang:python content:log -file:config"}
+{"instruction": "search for async functions in JavaScript or TypeScript", "output": "(lang:javascript or lang:typescript) content:async"}
+{"instruction": "find configure_gemini in services.py or config.py", "output": "file:services.py configure_gemini or file:config.py configure_gemini"}
+{"instruction": "search for database connection in config or settings files", "output": "(file:config or file:settings) content:database"}
+{"instruction": "find API routes in routes.py or api.py", "output": "(file:routes.py or file:api.py) content:route"}
+{"instruction": "search for models in models.py or schema.py", "output": "(file:models.py or file:schema.py)"}
+{"instruction": "find middleware in middleware.py or utils.py", "output": "(file:middleware.py or file:utils.py) content:middleware"}
+{"instruction": "search for handlers in handler.py or controller.py", "output": "(file:handler.py or file:controller.py)"}
+{"instruction": "find validators in validator.py or validation.py", "output": "(file:validator.py or file:validation.py)"}
+{"instruction": "search for serializers in serializer.py or serializers.py", "output": "(file:serializer.py or file:serializers.py)"}
+{"instruction": "find email validation patterns", "output": "content:/email.*@.*\\./"}
+{"instruction": "search for UUID patterns in code", "output": "content:/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"}
+{"instruction": "find date format patterns", "output": "content:/\\d{4}-\\d{2}-\\d{2}/"}
+{"instruction": "search for URL patterns", "output": "content:/https?:\\/\\//"}
+{"instruction": "find IP address patterns", "output": "content:/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/"}
+{"instruction": "search for credit card patterns", "output": "content:/\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}/"}
+{"instruction": "find phone number patterns", "output": "content:/\\(?\\d{3}\\)?[-.]?\\d{3}[-.]?\\d{4}/"}
+{"instruction": "search for hex color codes", "output": "content:/#[0-9a-fA-F]{6}/"}
+{"instruction": "find Python files in backend repository", "output": "repo:backend lang:python"}
+{"instruction": "search for JavaScript in frontend but exclude tests", "output": "repo:frontend lang:javascript -file:test"}
+{"instruction": "find Go handlers in API repository", "output": "repo:api lang:go content:handler"}
+{"instruction": "search for TypeScript components in frontend", "output": "repo:frontend lang:typescript content:component"}
+{"instruction": "find Python services in backend excluding migrations", "output": "repo:backend lang:python content:service -file:migration"}
+{"instruction": "search for JavaScript utilities in shared repository", "output": "repo:shared lang:javascript content:util"}
+{"instruction": "find Go tests in test repository", "output": "repo:test lang:go file:test"}
+{"instruction": "search for Python scripts in scripts repository", "output": "repo:scripts lang:python"}
+{"instruction": "find getAllBlogs function definition", "output": "sym:getAllBlogs"}
+{"instruction": "search for createUser method", "output": "sym:createUser"}
+{"instruction": "find processPayment function", "output": "sym:processPayment"}
+{"instruction": "search for validateToken method", "output": "sym:validateToken"}
+{"instruction": "find handleRequest function", "output": "sym:handleRequest"}
+{"instruction": "search for parseData method", "output": "sym:parseData"}
+{"instruction": "find formatOutput function", "output": "sym:formatOutput"}
+{"instruction": "search for authenticateUser method", "output": "sym:authenticateUser"}
+{"instruction": "find generateReport function", "output": "sym:generateReport"}
+{"instruction": "search for sendEmail method", "output": "sym:sendEmail"}
+{"instruction": "find TODO comments in Python but not in tests", "output": "lang:python content:/#.*TODO/ -file:test"}
+{"instruction": "search for FIXME in JavaScript excluding node_modules", "output": "lang:javascript content:/\\/\\/.*FIXME/ -file:node_modules"}
+{"instruction": "find HACK comments in Go code", "output": "lang:go content:/\\/\\/.*HACK/"}
+{"instruction": "search for NOTE comments in any language", "output": "content:/\\/\\/.*NOTE/ or content:/#.*NOTE/"}
+{"instruction": "find deprecated warnings in comments", "output": "content:/\\/\\/.*deprecated/ or content:/#.*deprecated/"}
+{"instruction": "search for XXX markers in code comments", "output": "content:/\\/\\/.*XXX/ or content:/#.*XXX/"}
+{"instruction": "find BUG comments in Python files", "output": "lang:python content:/#.*BUG/"}
+{"instruction": "find OPTIMIZE comments in JavaScript", "output": "lang:javascript content:/\\/\\/.*OPTIMIZE/"}
+{"instruction": "find where we use both database and cache", "output": "content:database content:cache"}
+{"instruction": "search for authentication and authorization together", "output": "content:auth content:authorize"}
+{"instruction": "find error handling with logging", "output": "content:error content:log"}
+{"instruction": "search for API calls with retry logic", "output": "content:API content:retry"}
+{"instruction": "find database transactions with rollback", "output": "content:transaction content:rollback"}
+{"instruction": "search for encryption and decryption functions", "output": "content:encrypt content:decrypt"}
+{"instruction": "find validation and sanitization together", "output": "content:validate content:sanitize"}
+{"instruction": "search for rate limiting and throttling", "output": "content:rate.*limit content:throttle"}
+{"instruction": "find Python decorators with parameters", "output": "lang:python content:@.*("}
+{"instruction": "search for Python context managers", "output": "lang:python content:with "}
+{"instruction": "find Python type hints with return types", "output": "lang:python content:->"}
+{"instruction": "search for Python list comprehensions", "output": "lang:python content:for.*in.*]"}
+{"instruction": "find Python generators", "output": "lang:python content:yield"}
+{"instruction": "search for JavaScript destructuring assignments", "output": "lang:javascript content:const.*{"}
+{"instruction": "find JavaScript template literals", "output": "lang:javascript content:`"}
+{"instruction": "search for JavaScript spread operators", "output": "lang:javascript content:..."}
+{"instruction": "find JavaScript optional chaining", "output": "lang:javascript content:\\?\\."}
+{"instruction": "search for Go error handling patterns", "output": "lang:go content:if.*err"}
+{"instruction": "find Go goroutines", "output": "lang:go content:go "}
+{"instruction": "search for Go channels", "output": "lang:go content:chan"}
+{"instruction": "find Go interfaces", "output": "lang:go content:type.*interface"}
+{"instruction": "search for Go struct definitions", "output": "lang:go content:type.*struct"}
+{"instruction": "find where we handle payment processing", "output": "content:payment content:process"}
+{"instruction": "search for user authentication flow", "output": "content:user content:auth"}
+{"instruction": "find API rate limiting implementation", "output": "content:rate.*limit"}
+{"instruction": "search for database migration scripts", "output": "file:migration"}
+{"instruction": "find where we validate user input", "output": "content:validate content:input"}
+{"instruction": "search for session management code", "output": "content:session"}
+{"instruction": "find where we handle file uploads", "output": "content:upload content:file"}
+{"instruction": "search for email sending functionality", "output": "content:email content:send"}
+{"instruction": "find where we cache API responses", "output": "content:cache content:API"}
+{"instruction": "search for password hashing implementation", "output": "content:password content:hash"}
+{"instruction": "find where we generate JWT tokens", "output": "content:JWT content:token"}
+{"instruction": "search for OAuth implementation", "output": "content:OAuth"}
+{"instruction": "find where we handle CORS", "output": "content:CORS"}
+{"instruction": "search for error logging and monitoring", "output": "content:error content:log"}
+{"instruction": "find where we implement retry logic", "output": "content:retry"}
+{"instruction": "find functions with empty parameters", "output": "content:def ( )"}
+{"instruction": "search for functions with multiple parameters", "output": "content:def .*,"}
+{"instruction": "find async functions with await", "output": "content:async content:await"}
+{"instruction": "search for functions that return None", "output": "content:return None"}
+{"instruction": "find functions that raise exceptions", "output": "content:raise"}
+{"instruction": "search for functions with type annotations", "output": "content:->"}
+{"instruction": "find functions with decorators", "output": "content:@ content:def"}
+{"instruction": "search for functions with docstrings", "output": "content:\"\"\""}
+{"instruction": "find functions with comments above them", "output": "content:# content:def"}
+{"instruction": "search for functions with try-except blocks", "output": "content:try content:except"}
+{"instruction": "find all .py files in src directory", "output": "file:src file:.py"}
+{"instruction": "search for .js files excluding node_modules", "output": "file:.js -file:node_modules"}
+{"instruction": "find .go files in cmd directory", "output": "file:cmd file:.go"}
+{"instruction": "search for .tsx files in components", "output": "file:components file:.tsx"}
+{"instruction": "find .json configuration files", "output": "file:.json file:config"}
+{"instruction": "search for .yaml or .yml files", "output": "file:.yaml or file:.yml"}
+{"instruction": "find .md documentation files", "output": "file:.md"}
+{"instruction": "search for .env environment files", "output": "file:.env"}
+{"instruction": "find Python code excluding tests and migrations", "output": "lang:python -file:test -file:migration"}
+{"instruction": "search for JavaScript excluding node_modules and dist", "output": "lang:javascript -file:node_modules -file:dist"}
+{"instruction": "find Go code excluding vendor and generated files", "output": "lang:go -file:vendor -file:generated"}
+{"instruction": "search for TypeScript excluding build and node_modules", "output": "lang:typescript -file:build -file:node_modules"}
+{"instruction": "find all code excluding test and mock files", "output": "content:def  -file:test -file:mock"}
+{"instruction": "search for functions excluding private methods", "output": "content:def  -content:__"}
+{"instruction": "find public methods excluding getters and setters", "output": "content:def  -content:get_ -content:set_"}
+{"instruction": "how many Python functions are there", "output": "lang:python content:def "}
+{"instruction": "count JavaScript classes", "output": "lang:javascript content:class "}
+{"instruction": "how many Go packages", "output": "lang:go content:package "}
+{"instruction": "count TypeScript interfaces", "output": "lang:typescript content:interface"}
+{"instruction": "how many test files", "output": "file:test"}
+{"instruction": "count TODO comments", "output": "content:/TODO/"}
+{"instruction": "how many error handlers", "output": "content:error"}
+{"instruction": "count API endpoints", "output": "content:endpoint"}
+{"instruction": "find React component definitions", "output": "lang:javascript content:export.*function.*Component"}
+{"instruction": "search for Express.js routes", "output": "lang:javascript content:app\\.(get|post|put|delete)"}
+{"instruction": "find Django models", "output": "lang:python content:class.*models\\.Model"}
+{"instruction": "search for Flask routes", "output": "lang:python content:@app\\.route"}
+{"instruction": "find FastAPI endpoints", "output": "lang:python content:@app\\.(get|post|put|delete)"}
+{"instruction": "search for Next.js API routes", "output": "file:api lang:javascript"}
+{"instruction": "find Vue component definitions", "output": "lang:javascript content:export.*default"}
+{"instruction": "search for Angular services", "output": "lang:typescript content:@Injectable"}
+{"instruction": "find where we sanitize user input", "output": "content:sanitize content:input"}
+{"instruction": "search for SQL injection prevention", "output": "content:SQL content:injection"}
+{"instruction": "find password hashing implementations", "output": "content:password content:hash"}
+{"instruction": "search for XSS prevention", "output": "content:XSS content:escape"}
+{"instruction": "find CSRF token handling", "output": "content:CSRF content:token"}
+{"instruction": "search for authentication middleware", "output": "content:auth content:middleware"}
+{"instruction": "find authorization checks", "output": "content:authorize content:check"}
+{"instruction": "search for encryption usage", "output": "content:encrypt"}
+{"instruction": "find where we use caching", "output": "content:cache"}
+{"instruction": "search for database query optimization", "output": "content:query content:optimize"}
+{"instruction": "find lazy loading implementations", "output": "content:lazy content:load"}
+{"instruction": "search for pagination logic", "output": "content:pagination"}
+{"instruction": "find where we batch operations", "output": "content:batch"}
+{"instruction": "search for connection pooling", "output": "content:pool content:connection"}
+{"instruction": "find where we use indexes", "output": "content:index"}
+{"instruction": "search for compression usage", "output": "content:compress"}
+{"instruction": "find unit test files", "output": "file:test content:test"}
+{"instruction": "search for test fixtures", "output": "content:fixture"}
+{"instruction": "find mock implementations", "output": "content:mock"}
+{"instruction": "search for test assertions", "output": "content:assert"}
+{"instruction": "find integration tests", "output": "file:integration content:test"}
+{"instruction": "search for test setup and teardown", "output": "content:setup content:teardown"}
+{"instruction": "find test data factories", "output": "content:factory content:test"}
+["find Python or JavaScript functions but not in tests", "(lang:python or lang:javascript) content:def  -file:test"]
+["search for Go or Python error handling", "(lang:go or lang:python) content:error"]
+["find TypeScript or JavaScript components", "(lang:typescript or lang:javascript) content:component"]
+["find configuration in .env or config files", "(file:.env or file:config)"]
+["search for tests in test or spec files", "(file:test or file:spec)"]
+["find documentation in .md or .txt files", "(file:.md or file:.txt)"]
+["find version numbers", "content:/\\d+\\.\\d+\\.\\d+/"]
+["search for semver patterns", "content:/\\d+\\.\\d+\\.\\d+/"]
+["find timestamp patterns", "content:/\\d{10,13}/"]
+["find where we call getAllBlogs", "content:getAllBlogs"]
+["search for usage of createUser", "content:createUser"]
+["find references to processPayment", "content:processPayment"]
+["find Python async generators", "lang:python content:async content:yield"]
+["search for JavaScript async/await patterns", "lang:javascript content:async content:await"]
+["find Go concurrent patterns", "lang:go content:go content:chan"]
+["find where we handle file downloads", "content:download content:file"]
+["search for image processing code", "content:image content:process"]
+["find where we generate PDFs", "content:PDF content:generate"]
+["search for CSV parsing", "content:CSV content:parse"]
+["find where we handle webhooks", "content:webhook"]
+["search for queue processing", "content:queue content:process"]
+["find functions with default parameters", "content:def .*="]
+["search for functions with keyword arguments", "content:def .*\\*\\*"]
+["find functions with variable arguments", "content:def .*\\*"]
+["search for lambda functions", "content:lambda"]
+["find arrow functions", "content:=>"]
+["find Redux actions", "content:action content:type"]
+["search for GraphQL resolvers", "content:resolver"]
+["find REST API controllers", "content:controller content:API"]
+["search for gRPC service definitions", "content:service content:rpc"]
+["find input validation", "content:validate content:input"]
+["search for output encoding", "content:encode content:output"]
+["find secret management", "content:secret content:key"]
+["search for token validation", "content:token content:validate"]
+["find database indexing", "content:index content:database"]
+["search for query optimization", "content:query content:optimize"]
+["find memory management", "content:memory content:manage"]
+["search for resource cleanup", "content:cleanup content:close"]
+["find where we handle file compression", "content:compress content:file"]
+["search for data serialization", "content:serialize"]
+["find where we parse JSON responses", "content:JSON content:parse"]
+["search for XML processing", "content:XML content:process"]
+["find where we handle timeouts", "content:timeout"]
+["search for circuit breaker patterns", "content:circuit.*breaker"]
+["find where we implement backoff strategies", "content:backoff"]
+["search for health check endpoints", "content:health content:check"]
+["find where we handle graceful shutdown", "content:shutdown content:graceful"]
