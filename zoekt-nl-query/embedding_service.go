@@ -49,13 +49,18 @@ func NewEmbeddingService() *EmbeddingService {
 		// Ollama not available, fall back to API
 	}
 	
-	// Fallback to OpenRouter/OpenAI API
+	// Fallback to OpenRouter/OpenAI API (requires API key)
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		apiKey = os.Getenv("OPENROUTER_API_KEY")
-		if apiKey == "" {
-			// Use same hardcoded key as OpenRouterTranslator
-			apiKey = "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"
+	}
+	
+	// If no API key and Ollama not available, disable embedding service
+	if apiKey == "" {
+		log.Printf("⚠️ Embedding service disabled: No API key provided and Ollama not available")
+		return &EmbeddingService{
+			enabled:   false,
+			useOllama: false,
 		}
 	}
 	
@@ -67,7 +72,7 @@ func NewEmbeddingService() *EmbeddingService {
 	return &EmbeddingService{
 		apiKey:    apiKey,
 		model:     model,
-		enabled:   apiKey != "",
+		enabled:   true,
 		useOllama: false,
 	}
 }

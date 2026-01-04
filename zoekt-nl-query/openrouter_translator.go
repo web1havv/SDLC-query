@@ -37,11 +37,16 @@ type OpenRouterTranslator struct {
 }
 
 func NewOpenRouterTranslator(searcher zoekt.Searcher) *OpenRouterTranslator {
-	// Use hardcoded API key (can be overridden by environment variable)
-	hardcodedKey := "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"
+	// Get API key from environment variable (required)
 	key := os.Getenv("OPENROUTER_API_KEY")
 	if key == "" {
-		key = hardcodedKey
+		log.Printf("⚠️ OpenRouter disabled: OPENROUTER_API_KEY environment variable not set")
+		return &OpenRouterTranslator{
+			apiKey:  "",
+			enabled: false,
+			model:   "",
+			searcher: searcher,
+		}
 	}
 	
 	// Use free model - let OpenRouter choose automatically via model parameter
@@ -57,7 +62,7 @@ func NewOpenRouterTranslator(searcher zoekt.Searcher) *OpenRouterTranslator {
 	
 	return &OpenRouterTranslator{
 		apiKey:  key,
-		enabled: true, // Always enabled with hardcoded key
+		enabled: true,
 		model:   model,
 		searcher: searcher,
 	}
