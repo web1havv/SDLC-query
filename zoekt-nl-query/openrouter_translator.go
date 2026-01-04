@@ -34,23 +34,14 @@ type OpenRouterTranslator struct {
 	enabled bool
 	model   string
 	searcher zoekt.Searcher // Add searcher to get codebase context
-	fewShotClient *FewShotClient // Add few-shot retrieval for better query generation
 }
 
 func NewOpenRouterTranslator(searcher zoekt.Searcher) *OpenRouterTranslator {
-	// Get API key from environment variable (required)
+	// Use hardcoded API key (can be overridden by environment variable)
+	hardcodedKey := "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"
 	key := os.Getenv("OPENROUTER_API_KEY")
 	if key == "" {
-		log.Printf("⚠️ OPENROUTER_API_KEY not set - OpenRouter translator will be disabled")
-		// Initialize few-shot client anyway (it may be used by other components)
-		fewShotClient := NewFewShotClient("http://localhost:6072")
-		return &OpenRouterTranslator{
-			apiKey:  "",
-			enabled: false,
-			model:   "",
-			searcher: searcher,
-			fewShotClient: fewShotClient,
-		}
+		key = hardcodedKey
 	}
 	
 	// Use free model - let OpenRouter choose automatically via model parameter
@@ -64,15 +55,11 @@ func NewOpenRouterTranslator(searcher zoekt.Searcher) *OpenRouterTranslator {
 	
 	log.Printf("✅ OpenRouter enabled with model: %s", model)
 	
-	// Initialize few-shot client for dynamic example retrieval
-	fewShotClient := NewFewShotClient("http://localhost:6072")
-	
 	return &OpenRouterTranslator{
 		apiKey:  key,
-		enabled: true,
+		enabled: true, // Always enabled with hardcoded key
 		model:   model,
 		searcher: searcher,
-		fewShotClient: fewShotClient,
 	}
 }
 

@@ -12,39 +12,136 @@ import (
 
 // EmbeddingService handles embedding generation and semantic search
 type EmbeddingService struct {
-	apiKey string
-	model  string // e.g., "text-embedding-ada-002" or "text-embedding-3-small"
+	apiKey  string
+	model   string // e.g., "text-embedding-ada-002" or "nomic-embed-text"
 	enabled bool
+	useOllama bool // Use local Ollama instead of OpenRouter
+	ollamaURL string // Ollama server URL
 }
 
 // NewEmbeddingService creates a new embedding service
 func NewEmbeddingService() *EmbeddingService {
+	// Check if we should use Ollama (local, free)
+	useOllama := os.Getenv("USE_OLLAMA") != "false" // Default to true if not explicitly disabled
+	ollamaURL := os.Getenv("OLLAMA_URL")
+	if ollamaURL == "" {
+		ollamaURL = "http://localhost:11434"
+	}
+	
+	// Test Ollama availability if enabled
+	if useOllama {
+		client := &http.Client{Timeout: 2 * time.Second}
+		resp, err := client.Get(ollamaURL + "/api/tags")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			resp.Body.Close()
+			// Ollama is available, use it
+			model := os.Getenv("EMBEDDING_MODEL")
+			if model == "" {
+				model = "nomic-embed-text" // Free, open-source embedding model
+			}
+			return &EmbeddingService{
+				useOllama: true,
+				ollamaURL: ollamaURL,
+				model:     model,
+				enabled:   true,
+			}
+		}
+		// Ollama not available, fall back to API
+	}
+	
+	// Fallback to OpenRouter/OpenAI API
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		// Try OpenRouter for embeddings
 		apiKey = os.Getenv("OPENROUTER_API_KEY")
+		if apiKey == "" {
+			// Use same hardcoded key as OpenRouterTranslator
+			apiKey = "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"
+		}
 	}
 	
 	model := os.Getenv("EMBEDDING_MODEL")
 	if model == "" {
-		// Use OpenAI's embedding model via OpenRouter
 		model = "openai/text-embedding-ada-002"
 	}
 	
 	return &EmbeddingService{
-		apiKey:  apiKey,
-		model:   model,
-		enabled: apiKey != "",
+		apiKey:    apiKey,
+		model:     model,
+		enabled:   apiKey != "",
+		useOllama: false,
 	}
 }
 
 // Embed generates an embedding vector for text
 func (e *EmbeddingService) Embed(text string) ([]float32, error) {
 	if !e.enabled {
-		return nil, fmt.Errorf("embedding service not enabled (no API key)")
+		return nil, fmt.Errorf("embedding service not enabled")
 	}
 	
-	// Use OpenRouter for embeddings (supports multiple providers)
+	// Use Ollama if available (local, free)
+	if e.useOllama {
+		return e.embedWithOllama(text)
+	}
+	
+	// Fallback to OpenRouter/OpenAI API
+	return e.embedWithOpenRouter(text)
+}
+
+// embedWithOllama generates embeddings using local Ollama
+func (e *EmbeddingService) embedWithOllama(text string) ([]float32, error) {
+	url := e.ollamaURL + "/api/embeddings"
+	
+	payload := map[string]interface{}{
+		"model": e.model,
+		"prompt": text,
+	}
+	
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Content-Type", "application/json")
+	
+	client := &http.Client{Timeout: 60 * time.Second} // Ollama can be slower
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("ollama request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes := make([]byte, 200)
+		resp.Body.Read(bodyBytes)
+		return nil, fmt.Errorf("ollama API error: status %d, body: %s", resp.StatusCode, string(bodyBytes))
+	}
+	
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	
+	// Extract embedding vector from Ollama response
+	if embedding, ok := result["embedding"].([]interface{}); ok {
+		vector := make([]float32, len(embedding))
+		for i, v := range embedding {
+			if f, ok := v.(float64); ok {
+				vector[i] = float32(f)
+			}
+		}
+		return vector, nil
+	}
+	
+	return nil, fmt.Errorf("failed to extract embedding from Ollama response")
+}
+
+// embedWithOpenRouter generates embeddings using OpenRouter API
+func (e *EmbeddingService) embedWithOpenRouter(text string) ([]float32, error) {
 	url := "https://openrouter.ai/api/v1/embeddings"
 	
 	payload := map[string]interface{}{

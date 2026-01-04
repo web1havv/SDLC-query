@@ -14,16 +14,33 @@ import (
 )
 
 type NLQueryServer struct {
-	searcher zoekt.Searcher
+	searcher            zoekt.Searcher
 	openRouterTranslator *OpenRouterTranslator
-	basicTranslator *BasicTranslator
+	basicTranslator     *BasicTranslator
+	semanticSearch      *SemanticSearchService
+	semanticIndexer     *SemanticIndexer
 }
 
 func NewNLQueryServer(searcher zoekt.Searcher) *NLQueryServer {
+	// Try to initialize semantic search (may fail if ChromaDB not available)
+	semanticSearch, err1 := NewSemanticSearchService()
+	if err1 != nil {
+		log.Printf("⚠️ Semantic search service not available: %v", err1)
+	}
+	
+	semanticIndexer, err2 := NewSemanticIndexer("")
+	if err2 != nil {
+		log.Printf("⚠️ Semantic indexer not available: %v", err2)
+	} else {
+		log.Printf("✅ Semantic indexer initialized successfully")
+	}
+	
 	return &NLQueryServer{
-		searcher: searcher,
+		searcher:             searcher,
 		openRouterTranslator: NewOpenRouterTranslator(searcher),
-		basicTranslator: NewBasicTranslator(),
+		basicTranslator:     NewBasicTranslator(),
+		semanticSearch:       semanticSearch,
+		semanticIndexer:      semanticIndexer,
 	}
 }
 
@@ -41,6 +58,12 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			"success": false,
 		})
 		return
+	}
+
+	// Check search mode: "semantic", "hybrid", or default (keyword)
+	searchMode := r.URL.Query().Get("mode")
+	if searchMode == "" {
+		searchMode = "hybrid" // Default to hybrid
 	}
 
 	// Check if direct query mode (skip translation)
@@ -156,9 +179,61 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Parse Zoekt query
+	// Try semantic search if enabled and mode is semantic/hybrid
+	var semanticResults []SemanticSearchResultV2
+	if s.semanticSearch != nil && (searchMode == "semantic" || searchMode == "hybrid") {
+		isIndexed, _ := s.semanticSearch.IsIndexed()
+		if isIndexed {
+			semResults, err := s.semanticSearch.Search(nlQuery, 20)
+			if err == nil {
+				semanticResults = semResults
+				log.Printf("🔍 Semantic search found %d results", len(semanticResults))
+			} else {
+				log.Printf("⚠️ Semantic search failed: %v", err)
+			}
+		} else {
+			log.Printf("⚠️ Semantic index not available, using keyword search only")
+		}
+	}
+
+	// If semantic-only mode and we have results, return them
+	if searchMode == "semantic" && len(semanticResults) > 0 {
+		responseTime := time.Since(startTime)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"originalQuery": nlQuery,
+			"queryType":     "semantic",
+			"isNL":          true,
+			"success":       true,
+			"resultCount":   len(semanticResults),
+			"responseTime":  responseTime.Milliseconds(),
+			"semanticResults": semanticResults,
+			"mode":          "semantic",
+		})
+		return
+	}
+
+	// Parse Zoekt query for keyword search
 	parsedQuery, err := query.Parse(zoektQuery)
 	if err != nil {
+		// If semantic search worked, use that instead
+		if len(semanticResults) > 0 {
+			responseTime := time.Since(startTime)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"originalQuery": nlQuery,
+				"queryType":     "semantic",
+				"isNL":          true,
+				"success":       true,
+				"resultCount":   len(semanticResults),
+				"responseTime":  responseTime.Milliseconds(),
+				"semanticResults": semanticResults,
+				"mode":          "hybrid",
+				"note":          "Keyword query failed, using semantic results",
+			})
+			return
+		}
+		
 		// Return JSON error instead of plain text
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -171,7 +246,7 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute search
+	// Execute keyword search
 	opts := &zoekt.SearchOptions{
 		MaxDocDisplayCount: 100,
 	}
@@ -255,6 +330,7 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		"countAnswer": countAnswer, // Answer for count queries
 		"directAnswer": directAnswer, // Direct answer from code analysis
 		"translatorUsed": translatorUsed, // Show which translator was used
+		"mode": searchMode,
 		"intent": map[string]interface{}{
 			"type":       intent.Type,
 			"entity":     intent.Entity,
@@ -262,6 +338,18 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			"confidence": intent.Confidence,
 			"variations": intent.Variations,
 		},
+	}
+
+	// Enhance semantic results with Zoekt in hybrid mode
+	if searchMode == "hybrid" && len(semanticResults) > 0 && result != nil {
+		enhancedResults := s.enhanceSemanticWithZoekt(semanticResults, result, nlQuery)
+		response["semanticResults"] = enhancedResults
+		response["semanticResultCount"] = len(enhancedResults)
+		response["enhanced"] = true // Flag to show results were enhanced
+	} else if len(semanticResults) > 0 {
+		// Just return semantic results as-is (semantic-only mode)
+		response["semanticResults"] = semanticResults
+		response["semanticResultCount"] = len(semanticResults)
 	}
 	
 	if err != nil {
@@ -272,272 +360,103 @@ func (s *NLQueryServer) HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 // extractAnswerSnippets extracts code snippets from search results for answering questions
-// Extracts at least 100 lines total across multiple files
 func (s *NLQueryServer) extractAnswerSnippets(result *zoekt.SearchResult, maxFiles int) []string {
 	var snippets []string
 	count := 0
-	targetLinesTotal := 100 // Target at least 100 lines total
-	linesPerFile := targetLinesTotal / maxFiles
-	if linesPerFile < 15 {
-		linesPerFile = 15 // Minimum 15 lines per file
-	}
-	
-	totalLines := 0
 	for _, file := range result.Files {
-		if count >= maxFiles || totalLines >= targetLinesTotal {
+		if count >= maxFiles {
 			break
 		}
 		var snippet strings.Builder
 		snippet.WriteString(fmt.Sprintf("File: %s\n", file.FileName))
-		snippet.WriteString(fmt.Sprintf("Repository: %s\n\n", file.Repository))
 		
-		fileLines := 0
-		
-		// Method 1: If we have full file content, extract from it
-		if len(file.Content) > 0 {
-			contentStr := string(file.Content)
-			allLines := strings.Split(contentStr, "\n")
-			
-			// If we have line matches, extract around those lines
-			if len(file.LineMatches) > 0 {
-				for _, match := range file.LineMatches {
-					if fileLines >= linesPerFile || totalLines >= targetLinesTotal {
-						break
-					}
-					
-					lineNum := match.LineNumber
-					startLine := int(lineNum) - 10 // 10 lines before
-					if startLine < 0 {
-						startLine = 0
-					}
-					endLine := int(lineNum) + 10 // 10 lines after
-					if endLine > len(allLines) {
-						endLine = len(allLines)
-					}
-					
-					// Extract lines around the match
-					for i := startLine; i < endLine && fileLines < linesPerFile && totalLines < targetLinesTotal; i++ {
-						line := strings.TrimRight(allLines[i], "\r\n")
-						if line != "" || i == int(lineNum)-1 { // Include empty lines if it's the match line
-							snippet.WriteString(line)
-							snippet.WriteString("\n")
-							fileLines++
-							totalLines++
-						}
-					}
-				}
-			} else {
-				// No line matches, extract first N lines of file
-				extractCount := linesPerFile
-				if extractCount > len(allLines) {
-					extractCount = len(allLines)
-				}
-				for i := 0; i < extractCount && totalLines < targetLinesTotal; i++ {
-					line := strings.TrimRight(allLines[i], "\r\n")
-					snippet.WriteString(line)
-					snippet.WriteString("\n")
-					fileLines++
-					totalLines++
-				}
-			}
-		} else if len(file.LineMatches) > 0 {
-			// Method 2: Extract from line matches with context (when content not available)
-			for _, match := range file.LineMatches {
-				if fileLines >= linesPerFile || totalLines >= targetLinesTotal {
+		// Extract from line matches
+		if len(file.LineMatches) > 0 {
+			for i, match := range file.LineMatches {
+				if i >= 5 { // Limit to 5 lines per file
 					break
 				}
-				
-				// Include before context (all available)
 				if len(match.Before) > 0 {
-					beforeLines := strings.Split(string(match.Before), "\n")
-					for j := 0; j < len(beforeLines) && fileLines < linesPerFile && totalLines < targetLinesTotal; j++ {
-						line := strings.TrimSpace(beforeLines[j])
-						if line != "" {
-							snippet.WriteString(line)
-							snippet.WriteString("\n")
-							fileLines++
-							totalLines++
-						}
-					}
+					snippet.Write(match.Before)
+					snippet.WriteString("\n")
 				}
-				
-				// Include the matched line
-				if fileLines < linesPerFile && totalLines < targetLinesTotal {
-					lineStr := strings.TrimSpace(string(match.Line))
-					if lineStr != "" {
-						snippet.WriteString(lineStr)
-						snippet.WriteString("\n")
-						fileLines++
-						totalLines++
-					}
-				}
-				
-				// Include after context (all available)
-				if len(match.After) > 0 && fileLines < linesPerFile && totalLines < targetLinesTotal {
-					afterLines := strings.Split(string(match.After), "\n")
-					for j := 0; j < len(afterLines) && fileLines < linesPerFile && totalLines < targetLinesTotal; j++ {
-						line := strings.TrimSpace(afterLines[j])
-						if line != "" {
-							snippet.WriteString(line)
-							snippet.WriteString("\n")
-							fileLines++
-							totalLines++
-						}
-					}
+				snippet.Write(match.Line)
+				snippet.WriteString("\n")
+				if len(match.After) > 0 {
+					snippet.Write(match.After)
+					snippet.WriteString("\n")
 				}
 			}
 		}
-		
-		if snippet.Len() > 0 {
-			snippets = append(snippets, snippet.String())
-			count++
-		}
+		snippets = append(snippets, snippet.String())
+		count++
 	}
-	
-	log.Printf("📝 Extracted %d total lines of code across %d files", totalLines, len(snippets))
 	return snippets
 }
 
-func (s *NLQueryServer) HandleClearCache(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": "Method not allowed. Use POST.",
-			"success": false,
-		})
-		return
-	}
-	
-	// Cache functionality was removed, so this is a no-op
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Cache clear endpoint (cache functionality removed)",
-	})
-	log.Printf("🗑️  Cache clear endpoint called (no-op)")
-}
-
-func (s *NLQueryServer) HandleAsk(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
-	
-	// Get question from request
-	question := r.URL.Query().Get("q")
-	if question == "" {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": "Missing question parameter 'q'",
-			"success": false,
-		})
-		return
+// enhanceSemanticWithZoekt uses Zoekt to enhance semantic search results
+// This makes Zoekt a "weapon" - a layer that validates, boosts, and enriches semantic results
+func (s *NLQueryServer) enhanceSemanticWithZoekt(semanticResults []SemanticSearchResultV2, zoektResult *zoekt.SearchResult, originalQuery string) []SemanticSearchResultV2 {
+	if s.searcher == nil || zoektResult == nil {
+		return semanticResults
 	}
 
-	log.Printf("💬 Question received: %s", question)
+	// Create a map of Zoekt-matched files for fast lookup
+	zoektFileMap := make(map[string]*zoekt.FileMatch)
+	for i := range zoektResult.Files {
+		file := &zoektResult.Files[i]
+		zoektFileMap[file.FileName] = file
+	}
 
-	// Step 1: Generate a Zoekt query to find relevant code
-	var zoektQuery string
-	var searchResult *zoekt.SearchResult
-	var searchErr error
+	// Enhance each semantic result
+	enhanced := make([]SemanticSearchResultV2, 0, len(semanticResults))
 	
-	if s.openRouterTranslator != nil && s.openRouterTranslator.enabled {
-		// Generate a query to find relevant code
-		zoektQuery, _, searchErr = s.openRouterTranslator.TranslateWithOpenRouter(question)
-		if searchErr == nil && zoektQuery != "" {
-			// Skip if we got a DIRECT_ANSWER (not a real query)
-			if !strings.HasPrefix(zoektQuery, "DIRECT_ANSWER:") {
-				// Parse and execute the Zoekt query
-				parsedQuery, parseErr := query.Parse(zoektQuery)
-				if parseErr == nil {
-				opts := &zoekt.SearchOptions{
-					MaxDocDisplayCount: 20, // Get top 20 files for more context
-					NumContextLines:    30, // Get 30 lines before/after each match
-					Whole:              true, // Request full file content for better extraction
-				}
-					ctx := context.Background()
-					searchResult, searchErr = s.searcher.Search(ctx, parsedQuery, opts)
-					if searchErr == nil {
-						log.Printf("📚 Found %d files for context", len(searchResult.Files))
-					}
-				}
-			} else {
-				// If we got DIRECT_ANSWER, clear the query
-				zoektQuery = ""
+	for _, semResult := range semanticResults {
+		enhancedResult := semResult
+		fileName := semResult.Chunk.FileName
+		
+		// Check if this file also matches in Zoekt (keyword search)
+		if zoektFile, found := zoektFileMap[fileName]; found {
+			// Boost: This semantic match also has keyword matches - highly relevant!
+			enhancedResult.Score = enhancedResult.Score * 1.3 // Boost by 30%
+			if enhancedResult.Score > 1.0 {
+				enhancedResult.Score = 1.0
 			}
-		}
-	}
-
-	// Step 2: Extract code snippets from search results
-	var codeSnippets []string
-	if searchResult != nil && len(searchResult.Files) > 0 {
-		codeSnippets = s.extractAnswerSnippets(searchResult, 10) // Top 10 files for more context
-		log.Printf("📝 Extracted %d code snippets", len(codeSnippets))
-	}
-
-	// Step 3: Use OpenRouter to generate text answer based on code snippets
-	var answer string
-	var err error
-	
-	if s.openRouterTranslator != nil && s.openRouterTranslator.enabled {
-		if len(codeSnippets) > 0 {
-			// Answer based on actual code snippets from Zoekt search
-			answer = s.openRouterTranslator.AnswerFromSnippets(question, codeSnippets)
-			if answer == "" {
-				err = fmt.Errorf("failed to generate answer from snippets")
+			enhancedResult.Similarity = enhancedResult.Similarity * 1.2 // Boost similarity too
+			if enhancedResult.Similarity > 1.0 {
+				enhancedResult.Similarity = 1.0
 			}
+			
+			// Add Zoekt metadata: keyword match count
+			keywordMatchCount := len(zoektFile.LineMatches)
+			
+			log.Printf("🎯 Enhanced semantic result: %s (similarity: %.2f → %.2f, keyword matches: %d)", 
+				fileName, semResult.Similarity, enhancedResult.Similarity, keywordMatchCount)
 		} else {
-			// Fallback: use basic answer
-			err = fmt.Errorf("no code snippets available for answering")
+			// Semantic match but no keyword match - still valid but lower confidence
+			log.Printf("💡 Semantic-only match: %s (no keyword matches)", fileName)
 		}
 		
-		if err != nil {
-			log.Printf("❌ Failed to generate answer: %v", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"error": fmt.Sprintf("Failed to generate answer: %v", err),
-				"success": false,
-				"question": question,
-			})
-			return
+		enhanced = append(enhanced, enhancedResult)
+	}
+	
+	// Re-sort by enhanced score (highest first)
+	for i := 0; i < len(enhanced); i++ {
+		for j := i + 1; j < len(enhanced); j++ {
+			if enhanced[j].Score > enhanced[i].Score {
+				enhanced[i], enhanced[j] = enhanced[j], enhanced[i]
+			}
 		}
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": "OpenRouter translator not available",
-			"success": false,
-			"question": question,
-		})
-		return
-	}
-
-	responseTime := time.Since(startTime)
-
-	// Return answer
-	filesFound := 0
-	if searchResult != nil {
-		filesFound = len(searchResult.Files)
 	}
 	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"question": question,
-		"answer": answer,
-		"success": true,
-		"responseTime": responseTime.Milliseconds(),
-		"type": "text_answer",
-		"queryUsed": zoektQuery,
-		"filesFound": filesFound,
-	})
-	
-	log.Printf("✅ Answer generated in %dms", responseTime.Milliseconds())
+	log.Printf("⚡ Enhanced %d semantic results with Zoekt validation", len(enhanced))
+	return enhanced
 }
 
 func (s *NLQueryServer) SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/nl-search", s.HandleSearch)
-	mux.HandleFunc("/api/ask", s.HandleAsk)
-	mux.HandleFunc("/api/clear-cache", s.HandleClearCache)
+	mux.HandleFunc("/api/index-codebase", s.HandleIndexCodebase)
+	mux.HandleFunc("/api/semantic-stats", s.HandleSemanticStats)
 	
 	// Serve our unified dashboard at /dashboard (main route)
 	mux.HandleFunc("/dashboard", func(w http.ResponseWriter, r *http.Request) {
@@ -556,9 +475,70 @@ func (s *NLQueryServer) SetupRoutes(mux *http.ServeMux) {
 	
 	log.Println("NL Query Server routes registered:")
 	log.Println("  GET /dashboard - Natural Language Search Dashboard (main)")
-	log.Println("  GET /api/nl-search?q=<query> - Natural language search API")
-	log.Println("  GET /api/ask?q=<question> - Ask questions, get text answers")
-	log.Println("  POST /api/clear-cache - Clear query translation cache")
+	log.Println("  GET /api/nl-search?q=<query>&mode=semantic|hybrid|keyword - Natural language search API")
+	log.Println("  POST /api/index-codebase?path=<codebase_path> - Index codebase for semantic search")
+	log.Println("  GET /api/semantic-stats - Get semantic index statistics")
 	log.Println("  GET / - Redirects to /dashboard")
+}
+
+// HandleIndexCodebase indexes a codebase for semantic search
+func (s *NLQueryServer) HandleIndexCodebase(w http.ResponseWriter, r *http.Request) {
+	if s.semanticIndexer == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Semantic indexing not available (embedding service not enabled)",
+			"success": false,
+		})
+		return
+	}
+
+	codebasePath := r.URL.Query().Get("path")
+	if codebasePath == "" {
+		codebasePath = "/Users/web1havv/SDLC_AI" // Default to workspace root
+	}
+
+	log.Printf("🚀 Starting codebase indexing: %s", codebasePath)
+
+	// Run indexing in goroutine to avoid blocking
+	go func() {
+		if err := s.semanticIndexer.IndexCodebase(codebasePath); err != nil {
+			log.Printf("❌ Indexing failed: %v", err)
+		} else {
+			log.Printf("✅ Indexing completed successfully")
+		}
+	}()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Indexing started in background",
+		"path":    codebasePath,
+	})
+}
+
+// HandleSemanticStats returns statistics about the semantic index
+func (s *NLQueryServer) HandleSemanticStats(w http.ResponseWriter, r *http.Request) {
+	if s.semanticSearch == nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"indexed": false,
+			"error":   "Semantic search not available",
+		})
+		return
+	}
+
+	stats, err := s.semanticSearch.GetIndexStats()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"indexed": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }
 

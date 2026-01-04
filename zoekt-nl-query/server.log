@@ -1,21 +1,46 @@
-2025/12/30 18:26:17 Starting NL Query Server on port 6071
-2025/12/30 18:26:17 Index directory: /Users/web1havv/.zoekt
-2025/12/30 18:26:17 [INFO] loading 2 shard(s): github.com%2Fweb1havv%2Fnew_prod_v16.00000.zoekt, github.com%2Fweb1havv%2Fvaibhav_site_v16.00000.zoekt
-2025/12/30 18:26:18 ✅ OpenRouter enabled with model: mistralai/mistral-7b-instruct:free
-2025/12/30 18:26:18 NL Query Server routes registered:
-2025/12/30 18:26:18   GET /dashboard - Natural Language Search Dashboard (main)
-2025/12/30 18:26:18   GET /api/nl-search?q=<query> - Natural language search API
-2025/12/30 18:26:18   GET / - Redirects to /dashboard
-2025/12/30 18:26:18 Starting server...
-2025/12/30 18:26:18 🎯 Dashboard: http://localhost:6071/dashboard
-2025/12/30 18:26:18 🔍 NL Search API: http://localhost:6071/api/nl-search?q=how many articles
-2025/12/30 18:26:18 📁 Index directory: /Users/web1havv/.zoekt
-2025/12/30 18:26:33 📚 Found relevant code snippets for context
-2025/12/30 18:26:38 📥 OpenRouter raw content:  lang:python sym:def
-2025/12/30 18:26:38 🤖 AI Model generated Zoekt query: lang:python sym:def
-2025/12/30 18:26:38 🎯 Detected query type: list
-2025/12/30 18:26:38 ✅ Using OpenRouter AI model
-2025/12/30 18:26:38 📝 Original query: list all python functions
-2025/12/30 18:26:38 📝 Generated Zoekt query: lang:python sym:def
-2025/12/30 18:26:38 📝 Query type: list
-signal: terminated
+2026/01/04 16:51:52 Starting NL Query Server on port 6071
+2026/01/04 16:51:52 Index directory: /Users/web1havv/.zoekt
+2026/01/04 16:51:52 [INFO] loading 1 shard(s): github.com%2Fweb1havv%2Fnew_prod_v16.00000.zoekt
+2026/01/04 16:51:52 ✅ Semantic indexer initialized successfully
+2026/01/04 16:51:52 ✅ OpenRouter enabled with model: mistralai/mistral-7b-instruct:free
+2026/01/04 16:51:52 NL Query Server routes registered:
+2026/01/04 16:51:52   GET /dashboard - Natural Language Search Dashboard (main)
+2026/01/04 16:51:52   GET /api/nl-search?q=<query>&mode=semantic|hybrid|keyword - Natural language search API
+2026/01/04 16:51:52   POST /api/index-codebase?path=<codebase_path> - Index codebase for semantic search
+2026/01/04 16:51:52   GET /api/semantic-stats - Get semantic index statistics
+2026/01/04 16:51:52   GET / - Redirects to /dashboard
+2026/01/04 16:51:52 Starting server...
+2026/01/04 16:51:52 Dashboard: http://localhost:6071/dashboard
+2026/01/04 16:51:52 NL Search API: http://localhost:6071/api/nl-search?q=how many articles
+2026/01/04 16:51:52 Index directory: /Users/web1havv/.zoekt
+2026/01/04 18:02:08 📚 Found relevant code snippets for context
+2026/01/04 18:02:12 📥 OpenRouter raw content:  `sym:LoginView`
+2026/01/04 18:02:12 🤖 AI Model generated Zoekt query: sym:LoginView
+2026/01/04 18:02:12 🎯 Detected query type: search
+2026/01/04 18:02:12 ✅ Using OpenRouter AI model
+2026/01/04 18:02:12 📝 Original query: where is LoginView
+2026/01/04 18:02:12 📝 Generated Zoekt query: sym:LoginView
+2026/01/04 18:02:12 📝 Query type: search
+2026/01/04 18:02:13 🔍 Semantic search found 20 results for query: where is LoginView
+2026/01/04 18:02:13 🔍 Semantic search found 20 results
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/staticfiles/rest_framework/js/coreapi-0.1.1.js (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/anyio/from_thread.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/cachetools/func.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/staticfiles/rest_framework/docs/js/api.js (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/anyio/functools.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/Image.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/Image.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/WmfImagePlugin.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/BlpImagePlugin.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/BlpImagePlugin.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/PIL/PdfParser.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/staticfiles/rest_framework/js/coreapi-0.1.1.js (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/staticfiles/rest_framework/js/coreapi-0.1.1.js (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/staticfiles/rest_framework/js/coreapi-0.1.1.js (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/annotated_types/__init__.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/anyio/_backends/_trio.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/charset_normalizer/md.py (no keyword matches)
+2026/01/04 18:02:13 💡 Semantic-only match: /Users/web1havv/mission x/new_prod/backend/venv/lib/python3.12/site-packages/charset_normalizer/md.py (no keyword matches)
+2026/01/04 18:02:13 ⚡ Enhanced 20 semantic results with Zoekt validation

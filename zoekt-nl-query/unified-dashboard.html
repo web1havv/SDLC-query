@@ -3,847 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoekt Natural Language Search</title>
+    <title>Semantic Code Search</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #fafafa;
-            color: #333;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
         }
-
-        .header {
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 20px 30px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .header h1 {
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #1a1a1a;
-        }
-
-        .search-container {
-            display: flex;
-            gap: 12px;
+        .container {
             max-width: 1200px;
-            align-items: center;
+            margin: 0 auto;
         }
-
+        h1 {
+            color: #58a6ff;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
         .search-box {
-            flex: 1;
-            padding: 12px 16px;
-            font-size: 15px;
-            border: 1px solid #ddd;
+            background: #161b22;
+            border: 1px solid #30363d;
             border-radius: 6px;
-            transition: border-color 0.2s;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-
-        .search-box:focus {
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 16px;
+        }
+        input[type="text"]:focus {
             outline: none;
-            border-color: #4CAF50;
+            border-color: #58a6ff;
         }
-
-        .search-btn {
-            padding: 12px 24px;
-            background: #4CAF50;
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .mode-btn {
+            padding: 8px 16px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn:hover {
+            background: #30363d;
+        }
+        .mode-btn.active {
+            background: #1f6feb;
+            border-color: #1f6feb;
             color: white;
+        }
+        button {
+            padding: 12px 24px;
+            background: #238636;
             border: none;
             border-radius: 6px;
-            font-size: 15px;
-            font-weight: 500;
+            color: white;
+            font-size: 16px;
             cursor: pointer;
             transition: background 0.2s;
         }
-
-        .search-btn:hover {
-            background: #45a049;
+        button:hover {
+            background: #2ea043;
         }
-
-        .search-btn:disabled {
-            background: #ccc;
+        button:disabled {
+            background: #30363d;
             cursor: not-allowed;
         }
-
-        .toggle-container {
+        .stats {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            background: #f5f5f5;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
             border-radius: 6px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .toggle-label {
-            font-size: 0.85em;
-            color: #666;
-            font-weight: 500;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 26px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 26px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #4CAF50;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-        }
-
-        .toggle-status {
-            font-size: 0.85em;
-            color: #4CAF50;
-            font-weight: 600;
-            min-width: 80px;
-        }
-
-        .toggle-status.direct {
-            color: #2196F3;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px;
-        }
-
-        .query-info-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .query-info-card h3 {
-            font-size: 0.85em;
-            text-transform: uppercase;
-            color: #666;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .query-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #f9f9f9;
-            border-radius: 6px;
-        }
-
-        .query-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .query-label {
-            font-weight: 600;
-            color: #555;
-            min-width: 140px;
-            font-size: 0.9em;
-        }
-
-        .query-value {
+            padding: 15px;
             flex: 1;
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            min-width: 200px;
+        }
+        .stat-label {
+            color: #8b949e;
             font-size: 0.9em;
-            color: #1a1a1a;
-            word-break: break-all;
+            margin-bottom: 5px;
         }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            margin-left: 8px;
+        .stat-value {
+            color: #58a6ff;
+            font-size: 1.5em;
+            font-weight: bold;
         }
-
-        .badge-translator {
-            background: #e3f2fd;
-            color: #1976d2;
+        .results {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
         }
-
-        .badge-type {
-            background: #f3e5f5;
-            color: #7b1fa2;
+        .result-item {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
         }
-
-        .badge-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .badge-error {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .results-section {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .results-header {
+        .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 10px;
         }
-
-        .results-header h2 {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #1a1a1a;
+        .result-file {
+            color: #58a6ff;
+            font-weight: bold;
         }
-
-        .results-count {
-            color: #666;
+        .result-score {
+            color: #8b949e;
             font-size: 0.9em;
         }
-
-        .result-item {
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
-        }
-
-        .result-item:last-child {
-            border-bottom: none;
-        }
-
-        .result-item:hover {
-            background: #fafafa;
-        }
-
-        .result-file-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .result-file-name {
-            font-weight: 600;
-            color: #1a1a1a;
-            font-size: 1em;
-        }
-
-        .result-file-path {
-            color: #666;
-            font-size: 0.85em;
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-        }
-
-        .result-lines {
-            margin-top: 12px;
-        }
-
-        .result-line {
-            display: flex;
-            gap: 12px;
-            padding: 8px 0;
-            border-left: 2px solid transparent;
-            padding-left: 12px;
-            transition: border-color 0.2s;
-        }
-
-        .result-line:hover {
-            border-left-color: #4CAF50;
-            background: #f9f9f9;
-            margin-left: -12px;
-            padding-left: 12px;
+        .result-content {
+            color: #c9d1d9;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            background: #161b22;
+            padding: 10px;
             border-radius: 4px;
-        }
-
-        .line-number {
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            color: #999;
-            font-size: 0.85em;
-            min-width: 50px;
-            text-align: right;
-        }
-
-        .line-content {
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #1a1a1a;
-            flex: 1;
             white-space: pre-wrap;
-            word-break: break-word;
             overflow-x: auto;
         }
-
-        .code-snippet {
-            background: #f8f8f8;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 12px;
-            margin: 8px 0;
-            overflow-x: auto;
-        }
-
-        .code-snippet .matched-line {
-            background: #fff9e6;
-            border-left: 3px solid #4CAF50;
-            padding-left: 12px;
-            margin: 4px 0;
-        }
-
-        .code-snippet .context-line {
-            opacity: 0.7;
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .no-results h3 {
-            font-size: 1.2em;
-            margin-bottom: 12px;
-            color: #666;
-        }
-
         .loading {
             text-align: center;
-            padding: 60px 20px;
-            color: #666;
+            padding: 40px;
+            color: #8b949e;
         }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4CAF50;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .yes-no-answer {
-            font-size: 1.3em;
-            font-weight: 600;
-            padding: 12px;
+        .error {
+            background: #da3633;
+            color: white;
+            padding: 15px;
             border-radius: 6px;
-            text-align: center;
-            margin: 12px 0;
+            margin-bottom: 20px;
         }
-
-        .yes-no-answer.yes {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .yes-no-answer.no {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .error-message {
-            background: #ffebee;
-            border: 1px solid #ffcdd2;
+        .info {
+            background: #1f6feb;
+            color: white;
+            padding: 15px;
             border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            color: #c62828;
-        }
-
-        .error-message strong {
-            display: block;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🔍 Natural Language Code Search</h1>
-        
-        <!-- Tabs -->
-        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
-            <button id="searchTab" onclick="switchTab('search')" style="padding: 12px 24px; border: none; background: #4CAF50; color: white; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600; font-size: 15px;">🔍 Search</button>
-            <button id="askTab" onclick="switchTab('ask')" style="padding: 12px 24px; border: none; background: #f5f5f5; color: #666; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600; font-size: 15px;">💬 Ask Question</button>
-        </div>
-        
-        <!-- Search Section -->
-        <div id="searchSection" class="tab-section">
-        <div class="search-container">
-            <input type="text" 
-                   class="search-box" 
-                   id="queryInput" 
-                   placeholder="Enter your query or natural language question..."
-                   onkeypress="if(event.key==='Enter') performSearch()">
-            <div class="toggle-container">
-                <span class="toggle-label">Use Model</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="useModelToggle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-status" id="toggleStatus">AI Model</span>
-            </div>
-            <button class="search-btn" onclick="performSearch()" id="searchBtn">Search</button>
-        </div>
-        </div>
-        
-        <!-- Ask Question Section -->
-        <div id="askSection" class="tab-section" style="display: none;">
-        <div class="search-container">
-            <input 
-                   class="search-box" 
-                   id="askInput" 
-                   placeholder="Ask a question about your codebase (e.g., 'have I used React?', 'what authentication methods are used?')..."
-                   onkeypress="if(event.key==='Enter') performAsk()">
-            <button class="search-btn" onclick="performAsk()" id="askBtn" style="background: #2196F3;">Ask</button>
-        </div>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- Answer Section (for Ask tab) -->
-        <div id="answerSection" style="display: none; margin-bottom: 24px;">
-            <div class="query-info-card">
-                <h3>💬 Answer</h3>
-                <div id="answerContent" style="padding: 16px; background: #f9f9f9; border-radius: 6px; white-space: pre-wrap; line-height: 1.6; font-size: 1em; color: #1a1a1a;"></div>
-                <div id="answerInfo" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0; font-size: 0.85em; color: #666;"></div>
-            </div>
-        </div>
+        <h1>🔍 Semantic Code Search</h1>
         
-        <!-- Query Information Card -->
-        <div id="queryInfoCard" style="display: none;" class="query-info-card">
-            <h3>Query Details</h3>
-            <div id="queryInfoContent"></div>
-        </div>
-
-        <!-- Results Section -->
-        <div id="resultsSection" style="display: none;" class="results-section">
-            <div class="results-header">
-                <h2>Search Results</h2>
-                <div class="results-count" id="resultsCount">0 results</div>
-            </div>
-            <div id="resultsArea"></div>
-        </div>
-
-        <!-- Initial State -->
-        <div id="initialState" style="text-align: center; padding: 60px 20px; color: #999;">
-            <h3 style="font-size: 1.3em; margin-bottom: 20px; color: #666;">Start Searching</h3>
-            <p style="margin-bottom: 30px;">Toggle "Use Model" ON for natural language queries, or OFF for direct Zoekt queries</p>
-            <div style="text-align: left; display: inline-block; max-width: 600px;">
-                <div style="margin-bottom: 20px;">
-                    <strong style="color: #4CAF50;">With Model (Natural Language):</strong>
-                    <ul style="margin-top: 10px; margin-left: 20px;">
-                        <li style="margin: 8px 0;">"how many articles are there"</li>
-                        <li style="margin: 8px 0;">"find functions about authentication"</li>
-                        <li style="margin: 8px 0;">"list all JavaScript files"</li>
-                    </ul>
-                </div>
-                <div>
-                    <strong style="color: #2196F3;">Direct Query (Zoekt Syntax):</strong>
-                    <ul style="margin-top: 10px; margin-left: 20px;">
-                        <li style="margin: 8px 0;"><code>lang:javascript useState</code></li>
-                        <li style="margin: 8px 0;"><code>file:".*\\.js" content:"function"</code></li>
-                        <li style="margin: 8px 0;"><code>sym:MyFunction</code></li>
-                    </ul>
-                </div>
+        <div class="search-box">
+            <form class="search-form" onsubmit="search(event)">
+                <input type="text" id="query" placeholder="Search your codebase... (e.g., 'authentication logic', 'database models')" autofocus>
+                <button type="submit" id="searchBtn">Search</button>
+            </form>
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="semantic" onclick="setMode('semantic')">Semantic</button>
+                <button class="mode-btn" data-mode="hybrid" onclick="setMode('hybrid')">Hybrid</button>
+                <button class="mode-btn" data-mode="keyword" onclick="setMode('keyword')">Keyword</button>
             </div>
         </div>
+
+        <div class="stats" id="stats"></div>
+        <div id="results"></div>
     </div>
 
     <script>
-        function switchTab(tab) {
-            if (tab === 'search') {
-                document.getElementById('searchSection').style.display = 'block';
-                document.getElementById('askSection').style.display = 'none';
-                const answerSection = document.getElementById('answerSection');
-                if (answerSection) answerSection.style.display = 'none';
-                document.getElementById('searchTab').style.background = '#4CAF50';
-                document.getElementById('searchTab').style.color = 'white';
-                document.getElementById('askTab').style.background = '#f5f5f5';
-                document.getElementById('askTab').style.color = '#666';
-            } else {
-                document.getElementById('searchSection').style.display = 'none';
-                document.getElementById('askSection').style.display = 'block';
-                document.getElementById('searchTab').style.background = '#f5f5f5';
-                document.getElementById('searchTab').style.color = '#666';
-                document.getElementById('askTab').style.background = '#2196F3';
-                document.getElementById('askTab').style.color = 'white';
-            }
+        let currentMode = 'semantic';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
         }
-        
-        async function performAsk() {
-            const question = document.getElementById('askInput').value.trim();
-            if (!question) {
-                alert('Please enter a question');
-                return;
-            }
-            
-            const askBtn = document.getElementById('askBtn');
-            const answerSection = document.getElementById('answerSection');
-            const answerContent = document.getElementById('answerContent');
-            
-            askBtn.disabled = true;
-            askBtn.textContent = 'Asking...';
-            answerSection.style.display = 'block';
-            answerContent.textContent = 'Loading answer...';
-            
+
+        async function loadStats() {
             try {
-                const response = await fetch(`/api/ask?q=${encodeURIComponent(question)}`);
-                if (!response.ok) {
-                    const errorText = await response.text().catch(() => response.statusText);
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
-                
-                // Use response.json() directly - it handles JSON parsing
-                const data = await response.json();
-                
-                if (data.success) {
-                    answerContent.textContent = data.answer;
-                    // Update query and files info
-                    const answerInfo = document.getElementById('answerInfo');
-                    if (answerInfo) {
-                        answerInfo.innerHTML = `
-                            <div style="margin-bottom: 8px;">Query used: <code style="background: #fff; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${escapeHtml(data.queryUsed || 'N/A')}</code></div>
-                            <div>Files analyzed: <strong>${data.filesFound || 0}</strong></div>
-                        `;
-                    }
-                } else {
-                    answerContent.textContent = 'Error: ' + (data.error || 'Failed to get answer');
-                }
-            } catch (error) {
-                answerContent.textContent = 'Error: ' + error.message;
-            } finally {
-                askBtn.disabled = false;
-                askBtn.textContent = 'Ask';
+                const res = await fetch('/api/semantic-stats');
+                const data = await res.json();
+                const statsDiv = document.getElementById('stats');
+                statsDiv.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-label">Indexed Chunks</div>
+                        <div class="stat-value">${data.total_chunks || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value">${data.indexed ? '✅ Ready' : '⚠️ Not Indexed'}</div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Failed to load stats:', e);
             }
         }
-        
-        // Toggle handler
-        document.getElementById('useModelToggle').addEventListener('change', function(e) {
-            const status = document.getElementById('toggleStatus');
-            const placeholder = document.getElementById('queryInput');
-            if (e.target.checked) {
-                status.textContent = 'AI Model';
-                status.classList.remove('direct');
-                placeholder.placeholder = 'Enter your query or natural language question...';
-            } else {
-                status.textContent = 'Direct';
-                status.classList.add('direct');
-                placeholder.placeholder = 'Enter Zoekt query syntax (e.g., lang:javascript useState)';
-            }
-        });
 
-        function formatTime(ms) {
-            if (!ms) return '-';
-            if (ms < 1000) return Math.round(ms) + 'ms';
-            return (ms / 1000).toFixed(2) + 's';
-        }
-
-        async function performSearch() {
-            const query = document.getElementById('queryInput').value.trim();
+        async function search(event) {
+            event.preventDefault();
+            const query = document.getElementById('query').value.trim();
             if (!query) return;
 
-            const btn = document.getElementById('searchBtn');
-            const useModel = document.getElementById('useModelToggle').checked;
-            btn.disabled = true;
-            btn.textContent = 'Searching...';
-
-            document.getElementById('initialState').style.display = 'none';
-            document.getElementById('resultsSection').style.display = 'block';
-
-            const resultsArea = document.getElementById('resultsArea');
-            resultsArea.innerHTML = '<div class="loading"><div class="spinner"></div>Searching...</div>';
+            const resultsDiv = document.getElementById('results');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            resultsDiv.innerHTML = '<div class="loading">🔍 Searching...</div>';
 
             try {
-                const directParam = useModel ? '' : '&direct=true';
-                const response = await fetch(`/api/nl-search?q=${encodeURIComponent(query)}${directParam}`);
-                const data = await response.json();
+                const url = `/api/nl-search?q=${encodeURIComponent(query)}&mode=${currentMode}`;
+                const res = await fetch(url);
+                const data = await res.json();
 
-                displayResults(data);
-            } catch (error) {
-                resultsArea.innerHTML = `<div class="error-message"><strong>Error</strong>${error.message}</div>`;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Search';
-            }
-        }
-
-        function displayResults(data) {
-            const resultsArea = document.getElementById('resultsArea');
-            const queryInfoCard = document.getElementById('queryInfoCard');
-            const queryInfoContent = document.getElementById('queryInfoContent');
-
-            // Handle errors
-            if (data.error || !data.success) {
-                resultsArea.innerHTML = `<div class="error-message">
-                    <strong>Query Error</strong>
-                    ${data.error || 'Unknown error'}<br>
-                    ${data.translatedQuery ? `<div style="margin-top: 12px;"><strong>Generated Query:</strong> <code style="background: #fff; padding: 4px 8px; border-radius: 4px;">${escapeHtml(data.translatedQuery)}</code></div>` : ''}
-                </div>`;
-                queryInfoCard.style.display = 'none';
-                return;
-            }
-
-            // Show query info
-            queryInfoCard.style.display = 'block';
-            let infoHtml = '';
-
-            // Show yes/no answer prominently if it's a yes/no question
-            if (data.queryType === 'yesno' && data.yesNoAnswer) {
-                const yesNoClass = data.resultCount > 0 ? 'yes' : 'no';
-                infoHtml += `<div class="yes-no-answer ${yesNoClass}">${data.yesNoAnswer}</div>`;
-            }
-            
-            // Show count answer prominently if it's a count query
-            if (data.queryType === 'count' && data.countAnswer) {
-                infoHtml += `<div class="yes-no-answer yes" style="font-size: 1.5em;">${data.countAnswer}</div>`;
-            }
-
-            // Always show the generated Zoekt query (primary field)
-            const generatedQuery = data.generatedQuery || data.translatedQuery || data.originalQuery || '';
-            
-            if (data.translatorUsed === 'direct' || !data.isNL) {
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Query:</div>
-                    <div class="query-value">${escapeHtml(data.originalQuery)}</div>
-                </div>`;
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Generated Zoekt Query:</div>
-                    <div class="query-value" style="font-weight: 600; color: #1976d2; font-size: 1.1em; font-family: 'Monaco', 'Menlo', 'Courier New', monospace;">${escapeHtml(generatedQuery)}</div>
-                </div>`;
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Type:</div>
-                    <div class="query-value">Direct Query</div>
-                </div>`;
-            } else {
-                const translator = data.translatorUsed || 'basic';
-                const translatorName = translator === 'openrouter' ? 'OpenRouter AI' : 
-                                     translator === 'basic' ? 'Basic Pattern' : 'AI';
-                
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Natural Language:</div>
-                    <div class="query-value">"${escapeHtml(data.originalQuery)}"</div>
-                </div>`;
-                
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Generated Zoekt Query:</div>
-                    <div class="query-value" style="font-weight: 600; color: #1976d2; font-size: 1.1em; font-family: 'Monaco', 'Menlo', 'Courier New', monospace;">${escapeHtml(generatedQuery)}</div>
-                </div>`;
-                
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Translator:</div>
-                    <div class="query-value">${translatorName}<span class="badge badge-translator">${translator}</span></div>
-                </div>`;
-                
-                infoHtml += `<div class="query-row">
-                    <div class="query-label">Query Type:</div>
-                    <div class="query-value">${data.queryType || 'search'}<span class="badge badge-type">${data.queryType || 'search'}</span></div>
-                </div>`;
-            }
-
-            infoHtml += `<div class="query-row">
-                <div class="query-label">Results:</div>
-                <div class="query-value">${data.resultCount} found</div>
-            </div>`;
-            
-            infoHtml += `<div class="query-row">
-                <div class="query-label">Response Time:</div>
-                <div class="query-value">${formatTime(data.responseTime)}</div>
-            </div>`;
-
-            queryInfoContent.innerHTML = infoHtml;
-
-            // Display results
-            if (!data.success || data.resultCount === 0) {
-                resultsArea.innerHTML = `<div class="no-results">
-                    <h3>No results found</h3>
-                    <p>Try rephrasing your query or using different keywords</p>
-                </div>`;
-                return;
-            }
-
-            const results = data.results?.Files || [];
-            if (results.length === 0) {
-                resultsArea.innerHTML = `<div class="no-results"><h3>No results found</h3></div>`;
-                return;
-            }
-
-            document.getElementById('resultsCount').textContent = `${data.resultCount} result${data.resultCount !== 1 ? 's' : ''}`;
-
-            // For count queries, show simplified view (just file names and line numbers)
-            const isCountQuery = data.queryType === 'count';
-            
-            let html = '';
-            results.forEach((file, idx) => {
-                html += `<div class="result-item">
-                    <div class="result-file-header">
-                        <div>
-                            <div class="result-file-name">${idx + 1}. ${escapeHtml(file.FileName)}</div>
-                            <div class="result-file-path">${escapeHtml(file.Repository || 'N/A')}</div>
-                        </div>
-                    </div>`;
-                
-                if (isCountQuery) {
-                    // For count queries, just show file and line numbers
-                    if (file.LineMatches && file.LineMatches.length > 0) {
-                        html += `<div class="result-lines">`;
-                        file.LineMatches.forEach(match => {
-                            html += `<div class="result-line">
-                                <div class="line-number">Line ${match.LineNumber}</div>
-                                <div class="line-content" style="color: #666; font-style: italic;">Match found</div>
-                            </div>`;
-                        });
-                        html += `</div>`;
-                    }
-                } else {
-                    // For regular queries, show full content with context
-                    html += `<div class="result-lines">`;
-                    if (file.LineMatches && file.LineMatches.length > 0) {
-                        file.LineMatches.forEach((match, matchIdx) => {
-                            // Decode context lines (Before) - limit to 3 lines
-                            if (match.Before) {
-                                let beforeContent = '';
-                                const beforeStr = String(match.Before).trim();
-                                // Try direct base64 decode first
-                                if (/^[A-Za-z0-9+/=]+=*$/.test(beforeStr) && beforeStr.length >= 4) {
-                                    try {
-                                        beforeContent = atob(beforeStr);
-                                    } catch (e) {
-                                        beforeContent = decodeLineContent(match.Before);
-                                    }
-                                } else {
-                                    beforeContent = decodeLineContent(match.Before);
-                                }
-                                const beforeLines = beforeContent.split('\n').filter(l => l.trim()).slice(-3); // Last 3 lines
-                                beforeLines.forEach(beforeLine => {
-                                    if (beforeLine.trim()) {
-                                        html += `<div class="result-line" style="opacity: 0.6; font-size: 0.9em;">
-                                            <div class="line-number" style="color: #bbb;">...</div>
-                                            <div class="line-content" style="color: #888;">${escapeHtml(beforeLine)}</div>
-                                        </div>`;
-                                    }
-                                });
-                            }
-                            
-                            // Decode the main matched line - always try base64 decoding
-                            let line = '';
-                            if (match.Line) {
-                                const lineStr = String(match.Line).trim();
-                                // Direct base64 decode attempt
-                                if (/^[A-Za-z0-9+/=]+=*$/.test(lineStr) && lineStr.length >= 4) {
-                                    try {
-                                        line = atob(lineStr);
-                                    } catch (e) {
-                                        // If atob fails, try decodeLineContent as fallback
-                                        line = decodeLineContent(match.Line);
-                                    }
-                                } else {
-                                    line = decodeLineContent(match.Line);
-                                }
-                            }
-                            
-                            // Ensure we have a line to display
-                            if (!line) line = String(match.Line || '');
-                            
-                            html += `<div class="result-line" style="background: #fff9e6; border-left: 3px solid #4CAF50; padding-left: 16px;">
-                                <div class="line-number" style="color: #4CAF50; font-weight: 600;">${match.LineNumber}</div>
-                                <div class="line-content" style="font-weight: 500; color: #1a1a1a;">${escapeHtml(line)}</div>
-                            </div>`;
-                            
-                            // Decode context lines (After) - limit to 3 lines
-                            if (match.After) {
-                                let afterContent = '';
-                                const afterStr = String(match.After).trim();
-                                // Try direct base64 decode first
-                                if (/^[A-Za-z0-9+/=]+=*$/.test(afterStr) && afterStr.length >= 4) {
-                                    try {
-                                        afterContent = atob(afterStr);
-                                    } catch (e) {
-                                        afterContent = decodeLineContent(match.After);
-                                    }
-                                } else {
-                                    afterContent = decodeLineContent(match.After);
-                                }
-                                const afterLines = afterContent.split('\n').filter(l => l.trim()).slice(0, 3); // First 3 lines
-                                afterLines.forEach(afterLine => {
-                                    if (afterLine.trim()) {
-                                        html += `<div class="result-line" style="opacity: 0.6; font-size: 0.9em;">
-                                            <div class="line-number" style="color: #bbb;">...</div>
-                                            <div class="line-content" style="color: #888;">${escapeHtml(afterLine)}</div>
-                                        </div>`;
-                                    }
-                                });
-                            }
-                            
-                            // Add separator between matches if there are multiple
-                            if (matchIdx < file.LineMatches.length - 1) {
-                                html += `<div style="height: 1px; background: #e0e0e0; margin: 16px 0;"></div>`;
-                            }
-                        });
-                    }
-                    html += `</div>`;
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
                 }
-                html += `</div>`;
-            });
-            resultsArea.innerHTML = html;
+
+                let html = '';
+                
+                if (data.semanticResults && data.semanticResults.length > 0) {
+                    html += `<h2 style="margin-bottom: 15px; color: #58a6ff;">Semantic Results (${data.semanticResults.length})</h2>`;
+                    data.semanticResults.forEach(result => {
+                        const chunk = result.Chunk || result.chunk || {};
+                        const fileName = chunk.FileName || chunk.fileName || 'Unknown';
+                        const content = chunk.Content || chunk.content || '';
+                        const startLine = chunk.StartLine || chunk.startLine || 0;
+                        const score = result.Score || result.score || result.Similarity || result.similarity || 0;
+                        
+                        html += `
+                            <div class="result-item">
+                                <div class="result-header">
+                                    <span class="result-file">${fileName}:${startLine}</span>
+                                    <span class="result-score">Score: ${score.toFixed(4)}</span>
+                                </div>
+                                <div class="result-content">${escapeHtml(content.substring(0, 500))}${content.length > 500 ? '...' : ''}</div>
+                            </div>
+                        `;
+                    });
+                } else if (data.results && data.results.length > 0) {
+                    html += `<h2 style="margin-bottom: 15px; color: #58a6ff;">Keyword Results (${data.resultCount || data.results.length})</h2>`;
+                    data.results.forEach(result => {
+                        html += `
+                            <div class="result-item">
+                                <div class="result-header">
+                                    <span class="result-file">${result.FileName || result.fileName || 'Unknown'}</span>
+                                </div>
+                                <div class="result-content">${escapeHtml(JSON.stringify(result, null, 2).substring(0, 500))}...</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="info">No results found. Try a different query or check if the codebase is indexed.</div>';
+                }
+
+                resultsDiv.innerHTML = html;
+            } catch (e) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
         }
 
         function escapeHtml(text) {
@@ -852,118 +295,9 @@
             return div.innerHTML;
         }
 
-        function decodeBase64(str) {
-            if (!str || typeof str !== 'string') return '';
-            try {
-                // Trim whitespace first
-                const trimmed = str.trim();
-                
-                // Check if it looks like base64 (only contains base64 chars)
-                // Base64 strings contain only A-Z, a-z, 0-9, +, /, and = padding
-                // Reduced minimum length from 10 to 4 to catch shorter base64 strings
-                if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                    try {
-                        const decoded = atob(trimmed);
-                        // If decoding succeeds, always use it (don't check if it's "readable")
-                        // Base64 decoded content should always be used if decoding succeeds
-                        return decoded;
-                    } catch (e) {
-                        // If atob fails, it's not valid base64, return original
-                        return str;
-                    }
-                }
-                return str;
-            } catch (e) {
-                return str;
-            }
-        }
-
-        function decodeLineContent(line) {
-            if (!line) return '';
-            
-            // Handle string (most common case - base64 encoded)
-            if (typeof line === 'string') {
-                const trimmed = line.trim();
-                // If it looks like base64, always try to decode it
-                if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                    try {
-                        const decoded = atob(trimmed);
-                        // If decoding succeeds, use decoded version
-                        return decoded;
-                    } catch (e) {
-                        // If decoding fails, it's not base64, return original
-                        return line;
-                    }
-                }
-                // If it doesn't look like base64, return as-is
-                return line;
-            } 
-            // Handle array of numbers
-            else if (Array.isArray(line)) {
-                try {
-                    // Check if array contains base64-encoded string
-                    const str = String.fromCharCode.apply(null, line.filter(n => n >= 0 && n <= 255));
-                    const trimmed = str.trim();
-                    if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                        try {
-                            return atob(trimmed);
-                        } catch (e) {
-                            return str;
-                        }
-                    }
-                    return str;
-                } catch (e) {
-                    return String(line);
-                }
-            } 
-            // Handle Uint8Array
-            else if (line instanceof Uint8Array) {
-                try {
-                    const str = String.fromCharCode.apply(null, Array.from(line));
-                    const trimmed = str.trim();
-                    if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                        try {
-                            return atob(trimmed);
-                        } catch (e) {
-                            return str;
-                        }
-                    }
-                    return str;
-                } catch (e) {
-                    return String(line);
-                }
-            } 
-            // Handle ArrayBuffer
-            else if (line instanceof ArrayBuffer) {
-                try {
-                    const uint8 = new Uint8Array(line);
-                    const str = String.fromCharCode.apply(null, Array.from(uint8));
-                    const trimmed = str.trim();
-                    if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                        try {
-                            return atob(trimmed);
-                        } catch (e) {
-                            return str;
-                        }
-                    }
-                    return str;
-                } catch (e) {
-                    return String(line);
-                }
-            }
-            
-            // Fallback: convert to string and try to decode
-            const str = String(line);
-            const trimmed = str.trim();
-            if (trimmed.length >= 4 && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-                try {
-                    return atob(trimmed);
-                } catch (e) {
-                    return str;
-                }
-            }
-            return str;
-        }
+        // Load stats on page load
+        loadStats();
+        setInterval(loadStats, 30000); // Refresh stats every 30 seconds
     </script>
 </body>
 </html>
