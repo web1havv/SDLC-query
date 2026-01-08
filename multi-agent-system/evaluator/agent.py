@@ -1,0 +1,201 @@
+"""Agent implementations for evaluator."""
+
+import os
+import pathlib
+import uuid
+from typing import List, Optional
+
+from typing import Optional
+
+from pydantic import BaseModel, Field
+from pydantic_ai.agent import Agent
+from pydantic_ai.models import Model
+from pydantic_ai.models.openai import OpenAIChatModel, OpenAIModelSettings
+from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.settings import ModelSettings
+
+from core import PromptManager
+from evaluator.config import JudgeConfig
+from evaluator.models import CodeSnippetResult
+
+
+class EvaluationResult(BaseModel):
+    """Result from evaluation/judge agent."""
+
+    issues: Optional[List[str]] = Field(
+        default=[], description="array of issues with the solution, (empty if none)"
+    )
+    strengths: Optional[List[str]] = Field(
+        default=[], description="array of positive aspects"
+    )
+    suggestions: Optional[List[str]] = Field(
+        default=[], description="array of improvements that could be made"
+    )
+    explanation: str = Field(
+        ...,
+        description="detailed reason why expected answer is (similar or not) to actual answer",
+    )
+    is_pass: bool = Field(..., description="Pass or Fail")
+
+
+class LLMJudge:
+    """LLM-based judge for evaluating agent responses."""
+
+    def __init__(self) -> None:
+        """Initialize LLM judge."""
+        self.config = JudgeConfig()
+        prompt_file_path = (
+            pathlib.Path(__file__).parent.parent / "prompts" / "prompts.yaml"
+        )
+        self._prompt_manager = PromptManager(
+            file_path=prompt_file_path,
+            section_path="agents.evaluate",
+        )
+
+        model, model_settings = self._llm_model
+        self._agent = Agent(
+            name="code_search_llm_judge_v2",
+            model=model,
+            model_settings=model_settings,
+            output_type=EvaluationResult,
+            system_prompt=self._prompt_manager.render_prompt("system_prompt"),
+            instrument=self.config.langfuse_enabled,
+        )
+
+    async def run(
+        self,
+        question: str,
+        expected_answer: CodeSnippetResult,
+        actual_answer: CodeSnippetResult,
+    ) -> EvaluationResult:
+        """Run evaluation.
+
+        Args:
+            question: Original question
+            expected_answer: Expected answer
+            actual_answer: Actual answer to evaluate
+
+        Returns:
+            Evaluation result
+        """
+        result = await self._agent.run(
+            self._prompt_manager.render_prompt(
+                "user_prompt",
+                question=question,
+                expected_answer=self._format_answer(expected_answer),
+                actual_answer=self._format_answer(actual_answer),
+            )
+        )
+
+        return result.output
+
+    def _format_answer(self, answer: CodeSnippetResult) -> str:
+        """Format answer for prompt."""
+        result = ""
+        result += f"code: \n```{answer.code}```\n"
+        result += f"language: ```{answer.language}```\n"
+        result += f"description: ```{answer.description}```\n"
+
+        return result
+
+    @property
+    def _llm_model(self) -> tuple[Model, ModelSettings]:
+        """Get LLM model and settings."""
+        model_kwargs = self.config.get_model_kwargs("llm_judge")
+        provider_kwargs = {}
+        # Default to OpenAI if base_url not specified
+        if "base_url" in model_kwargs:
+            provider_kwargs["base_url"] = model_kwargs["base_url"]
+        else:
+            provider_kwargs["base_url"] = self.config.default_base_url
+        if "api_key" in model_kwargs:
+            provider_kwargs["api_key"] = model_kwargs["api_key"]
+        else:
+            # Use OPENAI_API_KEY (OpenRouter key can be used if base_url points to OpenRouter)
+            provider_kwargs["api_key"] = os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY", "")
+
+        model = OpenAIChatModel(
+            model_name=self.config.llm_judge_model_name,
+            provider=OpenAIProvider(**provider_kwargs) if provider_kwargs else None,
+        )
+        model_settings = OpenAIModelSettings(
+            temperature=0.0,
+            max_tokens=8192,
+            timeout=180,
+        )
+
+        return model, model_settings
+
+
+class CodeAgentTypeParser:
+    """Agent that parses user input to extract code-related data types."""
+
+    def __init__(self, trace_id: str = None) -> None:
+        """Initialize code agent type parser.
+
+        Args:
+            trace_id: Optional trace ID
+        """
+        self.config = JudgeConfig()
+        prompt_file_path = (
+            pathlib.Path(__file__).parent.parent / "prompts" / "prompts.yaml"
+        )
+        self._prompt_manager = PromptManager(
+            file_path=prompt_file_path,
+            section_path="agents.code_agent_type_parser",
+        )
+
+        if trace_id is None:
+            trace_id = str(uuid.uuid4())
+
+        model, model_settings = self._llm_model
+        self._agent = Agent(
+            name="code_agent_type_parser",
+            model=model,
+            model_settings=model_settings,
+            system_prompt=self._prompt_manager.render_prompt("system_prompt"),
+            output_type=CodeSnippetResult,
+            instrument=self.config.langfuse_enabled,
+        )
+
+    async def run(self, user_input: str) -> CodeSnippetResult:
+        """Run parser.
+
+        Args:
+            user_input: User input to parse
+
+        Returns:
+            Parsed code snippet result
+        """
+        result = await self._agent.run(
+            self._prompt_manager.render_prompt("user_prompt", user_input=user_input)
+        )
+        return result.output
+
+    @property
+    def _llm_model(self) -> tuple[Model, ModelSettings]:
+        """Get LLM model and settings."""
+        model_kwargs = self.config.get_model_kwargs("code_agent_type_parser")
+        provider_kwargs = {}
+        # Default to OpenAI if base_url not specified
+        if "base_url" in model_kwargs:
+            provider_kwargs["base_url"] = model_kwargs["base_url"]
+        else:
+            provider_kwargs["base_url"] = self.config.default_base_url
+        if "api_key" in model_kwargs:
+            provider_kwargs["api_key"] = model_kwargs["api_key"]
+        else:
+            # Use OPENAI_API_KEY (OpenRouter key can be used if base_url points to OpenRouter)
+            provider_kwargs["api_key"] = os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY", "")
+
+        model = OpenAIChatModel(
+            model_name=self.config.code_agent_type_parser_model_name,
+            provider=OpenAIProvider(**provider_kwargs) if provider_kwargs else None,
+        )
+        model_settings = OpenAIModelSettings(
+            temperature=0.0,
+            max_tokens=8128,
+            timeout=60,
+        )
+        return model, model_settings
+

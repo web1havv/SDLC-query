@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Code Search System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .input-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .results h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .results .suggested-queries {
+            list-style: none;
+        }
+        
+        .results .suggested-queries li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        
+        .results .answer {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Multi-Agent Code Search</h1>
+            <p>Intelligent code search powered by AI agents</p>
+        </div>
+        
+        <div class="two-column">
+            <!-- Query Reformulation -->
+            <div class="card">
+                <h2>Query Reformulation</h2>
+                <form id="reformulate-form">
+                    <div class="input-group">
+                        <label for="reformulate-query">Enter your question:</label>
+                        <textarea 
+                            id="reformulate-query" 
+                            name="question" 
+                            placeholder="e.g., How does authentication work?"
+                            required
+                        ></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="reformulate-btn">
+                        Reformulate Query
+                    </button>
+                </form>
+                
+                <div class="loading" id="reformulate-loading">
+                    <div class="spinner"></div>
+                    <p>Reformulating your query...</p>
+                </div>
+                
+                <div class="error" id="reformulate-error"></div>
+                
+                <div class="results" id="reformulate-results">
+                    <h3>Suggested Queries:</h3>
+                    <ul class="suggested-queries" id="suggested-queries-list"></ul>
+                </div>
+            </div>
+            
+            <!-- Code Search -->
+            <div class="card">
+                <h2>Code Search</h2>
+                <form id="search-form">
+                    <div class="input-group">
+                        <label for="search-query">Enter your question:</label>
+                        <textarea 
+                            id="search-query" 
+                            name="question" 
+                            placeholder="e.g., Find all authentication handlers"
+                            required
+                        ></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="search-btn">
+                        Search Code
+                    </button>
+                </form>
+                
+                <div class="loading" id="search-loading">
+                    <div class="spinner"></div>
+                    <p>Searching codebase...</p>
+                </div>
+                
+                <div class="error" id="search-error"></div>
+                
+                <div class="results" id="search-results">
+                    <h3>Results:</h3>
+                    <div class="answer" id="search-answer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Query Reformulation
+        document.getElementById('reformulate-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('reformulate-query').value;
+            const btn = document.getElementById('reformulate-btn');
+            const loading = document.getElementById('reformulate-loading');
+            const error = document.getElementById('reformulate-error');
+            const results = document.getElementById('reformulate-results');
+            const list = document.getElementById('suggested-queries-list');
+            
+            btn.disabled = true;
+            loading.classList.add('show');
+            error.classList.remove('show');
+            results.classList.remove('show');
+            
+            try {
+                const formData = new FormData();
+                formData.append('question', query);
+                
+                const response = await fetch('/api/query-reformulate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    list.innerHTML = '';
+                    data.suggested_queries.forEach(query => {
+                        const li = document.createElement('li');
+                        li.textContent = query;
+                        list.appendChild(li);
+                    });
+                    results.classList.add('show');
+                } else {
+                    error.textContent = data.error || 'An error occurred';
+                    error.classList.add('show');
+                }
+            } catch (err) {
+                error.textContent = 'Failed to reformulate query: ' + err.message;
+                error.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+        
+        // Code Search
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('search-query').value;
+            const btn = document.getElementById('search-btn');
+            const loading = document.getElementById('search-loading');
+            const error = document.getElementById('search-error');
+            const results = document.getElementById('search-results');
+            const answer = document.getElementById('search-answer');
+            
+            btn.disabled = true;
+            loading.classList.add('show');
+            error.classList.remove('show');
+            results.classList.remove('show');
+            
+            try {
+                const formData = new FormData();
+                formData.append('question', query);
+                
+                const response = await fetch('/api/code-search', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    answer.textContent = data.answer;
+                    results.classList.add('show');
+                } else {
+                    error.textContent = data.error || 'An error occurred';
+                    error.classList.add('show');
+                }
+            } catch (err) {
+                error.textContent = 'Failed to search code: ' + err.message;
+                error.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
+
